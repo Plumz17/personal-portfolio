@@ -126,6 +126,7 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
   import { DialogueView, type PortraitSource } from '../lib/dialogue/view';
   import { basePath, flags, reducedMotion, setMasks } from '../lib/state';
   import type { Discipline } from '../lib/site';
+  import { duck, voice } from '../lib/sound';
 
   const root = document.querySelector<HTMLElement>('[data-guide]');
   const data = document.getElementById('pf-dialogues');
@@ -162,6 +163,7 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
     const view = new DialogueView(root.querySelector<HTMLElement>('[data-guide-view]')!, {
       resolvePortrait,
       instant: reducedMotion(),
+      onBlip: voice,
       onAdvance: () => runner.advance(),
       onChoose: (option) => {
         runner.choose(option);
@@ -172,9 +174,18 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
     const runner = new DialogueRunner(flags, {
       onLine: (line) => view.showLine(line),
       onChoice: (line, options) => view.showChoices(line, options),
-      onFinish: () => close(),
-      onModifiers: (modifiers) => modifiers.forEach(act),
+      onFinish: () => {
+        // Actions that move the visitor wait until the reply has been read.
+        const queued = pending.splice(0);
+        close();
+        queued.forEach(act);
+      },
+      onModifiers: (modifiers) =>
+        modifiers.forEach((m) => (m.startsWith('filter') ? act(m) : pending.push(m))),
     });
+
+    /** go, scroll, next and terminal run after the conversation ends. */
+    const pending: string[] = [];
 
     /** Site actions carried on a choice, for example |go=/archive|. */
     function act(modifier: string): void {
@@ -213,17 +224,22 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
       const dialogue = chosen ?? pick();
       if (!dialogue) return;
       runner.stop();
+      pending.length = 0;
       panel.hidden = false;
       launch.setAttribute('aria-expanded', 'true');
       alert.hidden = true;
+      duck(true);
       runner.start(dialogue);
       view.focus();
     }
 
     function close(): void {
+      // Closing early cancels a jump the visitor has not been told about yet.
+      pending.length = 0;
       runner.stop();
       view.clear();
       panel.hidden = true;
+      duck(false);
       launch.setAttribute('aria-expanded', 'false');
       refresh();
       if (!root!.hidden) launch.focus({ preventScroll: true });

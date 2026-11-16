@@ -73,7 +73,7 @@ const portraits = [
   </div>
   <div class="lab-grid">
     <label class="lab-source">
-      <span class="label">Vault file · Markdown</span>
+      <span class="label">Vault file (Markdown)</span>
       <textarea data-lab-source spellcheck="false" autocapitalize="off" rows="18">{sample}</textarea>
     </label>
     <div class="lab-out">
@@ -205,6 +205,7 @@ const portraits = [
   import { DialogueRunner, type FlagStore } from '../../lib/dialogue/runtime';
   import { DialogueView, type PortraitSource } from '../../lib/dialogue/view';
   import { reducedMotion } from '../../lib/state';
+  import { voice } from '../../lib/sound';
 
   document.querySelectorAll<HTMLElement>('[data-lab]').forEach((root) => {
     const source = root.querySelector<HTMLTextAreaElement>('[data-lab-source]')!;
@@ -235,6 +236,7 @@ const portraits = [
     const view = new DialogueView(viewEl, {
       resolvePortrait,
       instant: reducedMotion(),
+      onBlip: voice,
       onAdvance: () => runner.advance(),
       onChoose: (option) => runner.choose(option),
     });
@@ -267,7 +269,7 @@ const portraits = [
       try {
         current = parseDialogue('lab', source.value);
         const lines = Object.values(current.sections).reduce((n, s) => n + s.length, 0);
-        status.textContent = `Parsed · ${Object.keys(current.sections).length} sections · ${lines} lines`;
+        status.textContent = `Parsed: ${Object.keys(current.sections).length} sections, ${lines} lines`;
         status.removeAttribute('data-error');
         json.textContent = JSON.stringify(current, null, 2);
         play(true);

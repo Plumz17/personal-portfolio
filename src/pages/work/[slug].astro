@@ -81,11 +81,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
           </div>
           <div>
             <dt class="label">Year</dt>
-            <dd>{data.year}{data.status && ` · ${data.status}`}</dd>
+            <dd>{data.year}{data.status && `, ${data.status}`}</dd>
           </div>
           <div>
             <dt class="label">Built with</dt>
-            <dd>{data.stack.join(' · ')}</dd>
+            <dd>{data.stack.join(', ')}</dd>
           </div>
         </dl>
 

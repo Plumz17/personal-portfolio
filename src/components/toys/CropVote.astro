@@ -551,9 +551,9 @@ const pct = (t: Test) => (t.correct / t.n) * 100;
       const offset = n === 1 ? 0 : (maxD - minD) / (n - 1);
 
       let reject = '';
-      if (minD < MIN_SIDE) reject = `400 · Image is too small (shortest side must be at least ${MIN_SIDE} px).`;
-      else if (w * h > MAX_PIXELS) reject = '400 · Image has too many pixels.';
-      else if (n > MAX_CROPS) reject = '400 · Image shape is too long and thin.';
+      if (minD < MIN_SIDE) reject = `400: Image is too small (shortest side must be at least ${MIN_SIDE} px).`;
+      else if (w * h > MAX_PIXELS) reject = '400: Image has too many pixels.';
+      else if (n > MAX_CROPS) reject = '400: Image shape is too long and thin.';
 
       if (reject) {
         frame.innerHTML = `<span class="reject">${reject}</span>`;

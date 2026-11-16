@@ -40,6 +40,13 @@ import { profile } from '../data/profile';
         <span>Search</span>
         <kbd class="key" aria-hidden="true">/</kbd>
       </button>
+      <button type="button" class="tool tool-sound" data-sound-toggle aria-pressed="false" aria-label="Sound">
+        <svg class="sound-icon" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M2 6h3l4-3v10L5 10H2z" fill="currentColor" />
+          <path class="waves" d="M11 5.5c1 .8 1 4.2 0 5M12.8 3.8c2 1.8 2 6.6 0 8.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+          <path class="mute" d="M11 5.5l4 5M15 5.5l-4 5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+        </svg>
+      </button>
       <button type="button" class="tool tool-theme" data-theme-toggle aria-label="Switch between day and dusk colours">
         <span class="theme-icon" aria-hidden="true"></span>
       </button>
@@ -108,10 +115,7 @@ import { profile } from '../data/profile';
     padding: 0.2rem 0.55rem;
     border: 1px solid var(--ink);
     background: transparent;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-size: 0.85rem;
     cursor: pointer;
     transition:
       opacity 0.15s,
@@ -147,10 +151,7 @@ import { profile } from '../data/profile';
   .nav {
     display: flex;
     gap: 1.1rem;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-size: 0.92rem;
   }
 
   .nav a {
@@ -178,16 +179,23 @@ import { profile } from '../data/profile';
     border: 1px solid var(--ink);
     background: var(--ink);
     color: var(--paper);
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-size: 0.85rem;
     cursor: pointer;
   }
 
-  .tool-theme {
+  .tool-theme,
+  .tool-sound {
     background: transparent;
     color: var(--ink);
+  }
+
+  .sound-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+  .tool-sound[aria-pressed='true'] .mute,
+  .tool-sound[aria-pressed='false'] .waves {
+    display: none;
   }
 
   /* Half-filled disc: day on one side, dusk on the other. */
@@ -237,6 +245,7 @@ import { profile } from '../data/profile';
 
 <script>
   import { activeMasks, flags, isOn, toggleMask, toggleTheme } from '../lib/state';
+  import { soundOn, toggleSound } from '../lib/sound';
   import type { Discipline } from '../lib/site';
 
   /** Hide every [data-disc] element whose disciplines are all switched off. */
@@ -262,6 +271,12 @@ import { profile } from '../data/profile';
     btn.addEventListener('click', () => toggleMask(btn.dataset.mask as Discipline));
   });
   document.querySelector('[data-theme-toggle]')?.addEventListener('click', toggleTheme);
+
+  const soundBtn = document.querySelector<HTMLButtonElement>('[data-sound-toggle]');
+  const showSound = () => soundBtn?.setAttribute('aria-pressed', String(soundOn()));
+  soundBtn?.addEventListener('click', toggleSound);
+  document.addEventListener('pf:sound', showSound);
+  showSound();
   document.addEventListener('pf:masks', applyMasks);
   applyMasks();
 

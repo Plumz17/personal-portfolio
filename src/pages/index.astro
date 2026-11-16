@@ -12,29 +12,25 @@ const all = await getCollection('projects');
 const flagships = all.filter((p) => p.data.tier === 'flagship').sort((a, b) => a.data.order - b.data.order);
 const projects = all.filter((p) => p.data.tier === 'project').sort((a, b) => a.data.order - b.data.order);
 const count = (d: string) => all.filter((p) => (p.data.disciplines as string[]).includes(d)).length;
-const pad = (n: number) => String(n).padStart(2, '0');
 ---
 
 <Base flags={['at-home']}>
   <section class="hero wrap">
-    <p class="label">{profile.location} · Computer Science at Universitas Gadjah Mada</p>
     <h1>
       Anders Tan<i class="hero-mark" aria-hidden="true"><b data-d="games"></b><b data-d="software"></b><b data-d="ai"></b></i>
     </h1>
     <div class="hero-grid">
       <p class="lede">
-        Game programmer and software engineer. I build{' '}
-        <button type="button" class="solo" data-solo="games" data-d="games">games</button>, the{' '}
-        <button type="button" class="solo" data-solo="software" data-d="software">software</button>{' '}
-        around them, and{' '}
-        <button type="button" class="solo" data-solo="ai" data-d="ai">machine-learning</button>{' '}
-        pipelines that I test until I know where they break.
+        Aspiring <button type="button" class="solo" data-solo="games" data-d="games">game</button> developer, mostly in Godot,
+        and I also write <button type="button" class="solo" data-solo="software" data-d="software">software</button>{' '}
+        and meddle in <button type="button" class="solo" data-solo="ai" data-d="ai">AI</button>, especially NLP.
+        I study Computer Science at Universitas Gadjah Mada in Yogyakarta.
       </p>
       <ul class="tally">
         {
           DISCIPLINE_KEYS.map((d) => (
             <li data-d={d}>
-              <span class="tally-n">{pad(count(d))}</span>
+              <span class="tally-n">{count(d)}</span>
               <span class="tally-l">
                 <span class="dot" /> {DISCIPLINES[d].label}
                 <small>{DISCIPLINES[d].blurb}</small>
@@ -45,8 +41,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
       </ul>
     </div>
     <p class="hint label">
-      Press <kbd class="key">1</kbd> <kbd class="key">2</kbd> <kbd class="key">3</kbd> to switch a discipline off and on ·
-      <kbd class="key">/</kbd> to search
+      Press <kbd class="key">1</kbd> <kbd class="key">2</kbd> <kbd class="key">3</kbd> to hide or show a discipline, or{' '}
+      <kbd class="key">/</kbd> to search.
     </p>
   </section>
 
@@ -55,7 +51,6 @@ const pad = (n: number) => String(n).padStart(2, '0');
   <section class="section wrap" id="work" data-filter-group>
     <div class="section-head">
       <h2>Selected work</h2>
-      <span class="label">{flagships.length} case studies</span>
     </div>
 
     {
@@ -64,7 +59,6 @@ const pad = (n: number) => String(n).padStart(2, '0');
           <a class="flag-link" href={url(`work/${p.id}`)}>
             <div class="flag-text">
               <p class="flag-meta label">
-                <span class="flag-n">{pad(i + 1)}</span>
                 <span class="dots">
                   {p.data.disciplines.map((d) => (
                     <span class="dot" data-d={d} title={DISCIPLINES[d].label} />
@@ -86,7 +80,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
                 </div>
               </dl>
               {p.data.share && <ShareBar {...p.data.share} compact />}
-              <span class="flag-go label">Read the case study →</span>
+              <span class="flag-go">Read more</span>
             </div>
             <div class="flag-media">
               {p.data.cover ? (
@@ -121,7 +115,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
   <section class="section wrap" id="more" data-filter-group>
     <div class="section-head">
       <h2>More projects</h2>
-      <a class="label" href={url('/archive')}>and {archive.length} more in the archive →</a>
+      <a class="label" href={url('/archive')}>{archive.length} more in the archive</a>
     </div>
     <ul class="rows">
       {
@@ -150,7 +144,6 @@ const pad = (n: number) => String(n).padStart(2, '0');
   <section class="section wrap" id="leadership">
     <div class="section-head">
       <h2>Leading and teaching</h2>
-      <span class="label">2024 to now</span>
     </div>
     <div class="roles">
       {
@@ -175,23 +168,22 @@ const pad = (n: number) => String(n).padStart(2, '0');
   <section class="section wrap" id="about">
     <div class="section-head">
       <h2>About</h2>
-      <span class="label">{profile.languages}</span>
     </div>
     <div class="about">
       <div class="about-text">
         <p class="about-lede">
-          I like the parts of a game most players never notice: the format a writer types dialogue into, the menu that lays
-          itself out, the jump that forgives you by a tenth of a second.
+          On game teams I usually end up writing the tools: the Markdown dialogue pipeline in Truths Astray, the save
+          system and battle code in 31 Days.
         </p>
         <p>
           I'm a Computer Science student at Universitas Gadjah Mada in Yogyakarta, and I head the game development
-          division at KOMATIK UGM. Most of what I make starts as a system someone else has to use, whether that is a
-          teammate writing story, a designer tuning a level, or another team calling an API.
+          division at KOMATIK UGM, where I also write the Godot lessons.
         </p>
         <p>
-          The same habit carries into software and machine learning. Build the thing, then measure it honestly, including
-          the cases where it fails.
+          Outside games I've built FastAPI services and a few machine-learning projects. On the AI image detector I
+          led the team and wrote the evaluation that showed accuracy dropping from 96% to 50% on compressed JPEGs.
         </p>
+        <p>I speak {profile.languages}.</p>
 
         <h3 class="sub">Education</h3>
         <ul class="plain">
@@ -208,13 +200,13 @@ const pad = (n: number) => String(n).padStart(2, '0');
           }
         </ul>
 
-        <h3 class="sub">Tools I reach for</h3>
+        <h3 class="sub">Tools</h3>
         <dl class="skills">
           {
             skills.map((s) => (
               <div>
                 <dt class="label">{s.group}</dt>
-                <dd>{s.items.join(' · ')}</dd>
+                <dd>{s.items.join(', ')}</dd>
               </div>
             ))
           }
@@ -241,7 +233,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
   </section>
 
   <section class="section wrap contact" id="contact">
-    <p class="label">Open to game programming and software engineering roles and internships</p>
+    <p class="label">I'm looking for internships and roles in game programming or software engineering.</p>
     <a class="mail" href={`mailto:${profile.email}`}>{profile.email}</a>
     <ul class="links">
       {
@@ -351,20 +343,23 @@ const pad = (n: number) => String(n).padStart(2, '0');
     border-top: 1px solid var(--rule);
   }
 
+  /* A big numeral centred on the two-line label beside it. */
   .tally li {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 1rem;
-    padding: 0.55rem 0;
+    padding: 0.7rem 0;
     border-bottom: 1px solid var(--rule);
   }
 
   .tally-n {
-    font-family: var(--font-mono);
-    font-size: 1.5rem;
-    font-weight: 500;
+    font-size: 2.9rem;
+    font-weight: 800;
+    font-variation-settings: 'wdth' 75;
+    line-height: 0.8;
     color: var(--d-ink);
-    min-width: 2ch;
+    min-width: 1.6ch;
+    text-align: center;
   }
 
   .tally-l {
@@ -410,11 +405,6 @@ const pad = (n: number) => String(n).padStart(2, '0');
     max-width: none;
   }
 
-  .flag-n {
-    color: var(--ink);
-    font-size: 0.9rem;
-  }
-
   .flag h3 {
     font-size: clamp(2.6rem, 6.4vw, 5.8rem);
     text-transform: uppercase;
@@ -448,9 +438,9 @@ const pad = (n: number) => String(n).padStart(2, '0');
   .flag-go {
     display: inline-block;
     margin-top: 1rem;
-    color: var(--ink);
-    border-bottom: 1px solid var(--ink);
-    padding-bottom: 0.15rem;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
   }
 
   .flag-media {
@@ -503,10 +493,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
   }
 
   .poster span {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
+    font-size: 0.85rem;
   }
 
   .empty {
@@ -584,10 +571,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
   .role-org {
     margin: 0.2rem 0 0.7rem;
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    font-size: 0.94rem;
     color: var(--ink-2);
   }
 
@@ -617,14 +601,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
   }
 
   .sub {
-    margin: 2.2rem 0 0.8rem;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    font-weight: 500;
-    font-variation-settings: normal;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    line-height: 1.4;
+    margin: 2.4rem 0 0.8rem;
+    font-size: 1.35rem;
+    font-variation-settings: 'wdth' 84;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
     padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--rule);
   }

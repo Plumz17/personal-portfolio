@@ -6,7 +6,7 @@ import { profile } from '../data/profile';
 <footer class="site-footer">
   <div class="wrap inner">
     <p class="label">
-      {profile.shortName} - {profile.location}
+      {profile.shortName}, {profile.location}
     </p>
     <ul>
       {
@@ -19,7 +19,8 @@ import { profile } from '../data/profile';
       <li><a href={url('/archive')}>Archive</a></li>
     </ul>
     <p class="colophon">
-      Built with Astro. All game art on this site comes from the games themselves. No generative images.
+      Built with Astro. The art, sound and music all come from the games themselves. The music is from Truths Astray,
+      by R. Ethan Halim.
     </p>
   </div>
 </footer>
@@ -41,10 +42,7 @@ import { profile } from '../data/profile';
     margin: 0;
     padding: 0;
     list-style: none;
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    font-size: 0.94rem;
   }
   ul a {
     display: inline-block;

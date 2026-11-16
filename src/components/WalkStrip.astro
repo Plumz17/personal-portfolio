@@ -219,6 +219,7 @@ const config = {
 
 <script>
   import { reducedMotion, theme } from '../lib/state';
+  import { footstep } from '../lib/sound';
 
   interface Sheet {
     src: string;
@@ -255,6 +256,7 @@ const config = {
   const SPEED = 120;
   const NEAR = 64;
   const FOREGROUND_SPEED = 1.3;
+  const STEP_EVERY = 0.5; // seconds, the game's footstep timer
 
   // Sampled from the game's office and bedroom.
   const DAY = {
@@ -323,6 +325,7 @@ const config = {
     let last = 0;
     let visible = true;
     let near: (typeof signs)[number] | null = null;
+    let stepIn = 0; // seconds until the next footstep
 
     function resize(): void {
       const width = stage.clientWidth;
@@ -511,7 +514,15 @@ const config = {
         }
         if (dir !== 0) {
           facing = dir;
+          const before = x;
           x = Math.max(40, Math.min(worldW - 40, x + dir * SPEED * dt));
+          stepIn -= dt;
+          if (x !== before && stepIn <= 0) {
+            footstep();
+            stepIn = STEP_EVERY;
+          }
+        } else {
+          stepIn = 0;
         }
         draw();
       }

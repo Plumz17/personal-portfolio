@@ -15,6 +15,8 @@ export interface ViewOptions {
   onAdvance(): void;
   onChoose(option: DialogueOption): void;
   instant?: boolean;
+  /** Called every second visible letter with the speaker's name, for a voice blip. */
+  onBlip?(speaker: string): void;
 }
 
 const CHAR_MS = 18;
@@ -44,6 +46,7 @@ export class DialogueView {
   private readonly nextBtn: HTMLButtonElement;
   private timer = 0;
   private typing = false;
+  private speaker = '';
 
   constructor(
     container: HTMLElement,
@@ -125,6 +128,7 @@ export class DialogueView {
     const name = line.alias || (line.name ? line.name[0]!.toUpperCase() + line.name.slice(1) : '');
     this.nameEl.textContent = name;
     this.root.dataset.side = line.tags.includes('right') ? 'right' : 'left';
+    this.speaker = line.name ?? '';
     void this.drawPortrait(line);
   }
 
@@ -184,8 +188,10 @@ export class DialogueView {
     this.typing = true;
     let i = 0;
     this.timer = window.setInterval(() => {
-      chars[i]?.classList.remove('off');
+      const ch = chars[i];
+      ch?.classList.remove('off');
       i += 1;
+      if (i % 2 === 0 && this.speaker && ch?.textContent?.trim()) this.opts.onBlip?.(this.speaker);
       if (i >= chars.length) this.finishTyping();
     }, CHAR_MS);
   }

@@ -145,11 +145,8 @@ p {
 
 /* Small uppercase monospace label, used for all metadata. */
 .label {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+  font-size: 0.88rem;
+  line-height: 1.4;
   color: var(--ink-2);
 }
 
@@ -233,10 +230,8 @@ p {
   border: 1px solid var(--ink);
   background: transparent;
   color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 0.95rem;
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   transition:
@@ -341,12 +336,9 @@ p {
 }
 
 .prose th {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.88rem;
   color: var(--ink-2);
-  font-weight: 500;
+  font-weight: 600;
   border-bottom-color: var(--ink);
 }
 
@@ -367,10 +359,7 @@ p {
 }
 
 .toy-head strong {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 0.95rem;
 }
 
 .toy-note {
@@ -448,7 +437,14 @@ p {
 }
 
 .dlg-body {
+  position: relative;
   min-width: 0;
+}
+
+/* Room for the "next" marker is kept while a line types, so the box does not
+   grow when the marker appears. Choices replace it, so they need none. */
+.dlg-body:has(.dlg-choices:empty) .dlg-text {
+  padding-bottom: 1.5rem;
 }
 
 .dlg-text:empty {
@@ -508,8 +504,9 @@ p {
 }
 
 .dlg-next {
-  justify-self: end;
-  margin-top: 0.3rem;
+  position: absolute;
+  right: -0.3rem;
+  bottom: -0.45rem;
   padding: 0.2rem 0.5rem;
   min-height: 2rem;
   border: 0;

@@ -30,7 +30,7 @@ status: Deployed
 
 Upload a JPG or PNG and the service answers `real` or `fake`, how many crops of the image it examined, and what share of them looked generated. Detection uses PatchCraft, a method that ignores what a picture shows and looks only at fine pixel texture.
 
-We were handed a trained research model in a notebook. The project was turning that into something other people could call, and then finding out honestly how far to trust it.
+We were handed a trained research model in a notebook. The project was turning that into something other people could call, and then finding out how far to trust it.
 
 ## What I built
 
