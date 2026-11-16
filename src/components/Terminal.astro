@@ -1,0 +1,371 @@
+---
+// Terminal-style search over every project and archive entry.
+// Opens with "/" or the header button. A nod to the terminal in Truths Astray.
+import { getCollection } from 'astro:content';
+import { archive } from '../data/archive';
+import { url } from '../lib/site';
+import { profile } from '../data/profile';
+
+const projects = await getCollection('projects');
+
+const index = [
+  ...projects
+    .sort((a, b) => (a.data.tier === b.data.tier ? a.data.order - b.data.order : a.data.tier === 'flagship' ? -1 : 1))
+    .map((p) => ({
+      title: p.data.title,
+      href: url(`work/${p.id}`),
+      kind: p.data.tier === 'flagship' ? 'flagship' : 'project',
+      disciplines: p.data.disciplines,
+      year: p.data.year,
+      text: [p.data.tagline, p.data.role, p.data.context, p.data.stack.join(' ')].join(' '),
+      external: false,
+    })),
+  ...archive.map((a) => ({
+    title: a.title,
+    href: a.href ?? url('archive'),
+    kind: a.kind.toLowerCase(),
+    disciplines: a.disciplines,
+    year: a.year,
+    text: a.note,
+    external: Boolean(a.href),
+  })),
+];
+
+const payload = JSON.stringify({ index, profile: { email: profile.email, links: profile.links } }).replace(
+  /</g,
+  '\\u003c',
+);
+---
+
+<dialog class="term" data-terminal aria-label="Search projects">
+  <form method="dialog" class="term-bar">
+    <span class="term-title">anders@portfolio</span>
+    <button class="term-close" aria-label="Close search">esc</button>
+  </form>
+  <div class="term-log" data-term-log aria-live="polite"></div>
+  <label class="term-input">
+    <span aria-hidden="true">&gt;</span>
+    <span class="sr-only">Search or type a command</span>
+    <input
+      type="text"
+      data-term-input
+      autocomplete="off"
+      autocapitalize="off"
+      spellcheck="false"
+      placeholder="godot, fastapi, 2025, help…"
+    />
+  </label>
+  <ul class="term-results" data-term-results></ul>
+</dialog>
+<script type="application/json" id="pf-search" set:html={payload} />
+
+<style>
+  .term {
+    width: min(46rem, calc(100vw - 1.5rem));
+    max-height: min(80vh, 40rem);
+    margin-top: 10vh;
+    padding: 0;
+    border: 1px solid #f1eee6;
+    background: #12110e;
+    color: #e9e4d6;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    box-shadow: 8px 8px 0 rgb(0 0 0 / 0.35);
+  }
+
+  .term[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .term::backdrop {
+    background: rgb(10 9 7 / 0.55);
+  }
+
+  .term-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #3a372f;
+    color: #8f897a;
+  }
+
+  .term-close {
+    min-height: 2rem;
+    padding: 0.1rem 0.5rem;
+    border: 1px solid #5a5548;
+    background: none;
+    color: #e9e4d6;
+    font-family: inherit;
+    font-size: 0.72rem;
+    cursor: pointer;
+  }
+
+  .term-log {
+    padding: 0.6rem 0.75rem 0;
+    color: #a9a393;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    max-height: 12rem;
+  }
+
+  .term-log:empty {
+    display: none;
+  }
+
+  .term-input {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    color: #3fd983;
+  }
+
+  .term-input input {
+    flex: 1;
+    min-width: 0;
+    min-height: 2.25rem;
+    border: 0;
+    outline: 0;
+    background: none;
+    color: #f4efe1;
+    font: inherit;
+    font-size: 1rem;
+    caret-color: #3fd983;
+  }
+
+  .term-results {
+    margin: 0;
+    padding: 0 0 0.5rem;
+    list-style: none;
+    overflow-y: auto;
+    border-top: 1px solid #3a372f;
+  }
+
+  .term-results:empty {
+    display: none;
+  }
+
+  .term-results :global(a) {
+    display: grid;
+    grid-template-columns: 3.2rem 1fr auto;
+    gap: 0.75rem;
+    align-items: baseline;
+    padding: 0.5rem 0.75rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .term-results :global(a:hover),
+  .term-results :global(a:focus-visible),
+  .term-results :global(a[data-active]) {
+    background: #e9e4d6;
+    color: #12110e;
+    outline: none;
+  }
+
+  .term-results :global(.yr) {
+    color: #8f897a;
+  }
+
+  .term-results :global(a[data-active] .yr),
+  .term-results :global(a:hover .yr),
+  .term-results :global(a[data-active] .kd),
+  .term-results :global(a:hover .kd) {
+    color: inherit;
+  }
+
+  .term-results :global(.kd) {
+    color: #8f897a;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+</style>
+
+<script>
+  import { activeMasks, resetMemory, setMasks, toggleTheme } from '../lib/state';
+  import type { Discipline } from '../lib/site';
+
+  interface Entry {
+    title: string;
+    href: string;
+    kind: string;
+    disciplines: Discipline[];
+    year: string;
+    text: string;
+    external: boolean;
+  }
+
+  const dialog = document.querySelector<HTMLDialogElement>('[data-terminal]');
+  const payload = document.getElementById('pf-search');
+
+  if (dialog && payload) {
+    const { index, profile } = JSON.parse(payload.textContent ?? '{}') as {
+      index: Entry[];
+      profile: { email: string; links: { label: string; href: string }[] };
+    };
+    const input = dialog.querySelector<HTMLInputElement>('[data-term-input]')!;
+    const list = dialog.querySelector<HTMLUListElement>('[data-term-results]')!;
+    const log = dialog.querySelector<HTMLElement>('[data-term-log]')!;
+    let active = 0;
+
+    const ALIASES: Record<string, Discipline> = {
+      games: 'games',
+      game: 'games',
+      software: 'software',
+      web: 'software',
+      ai: 'ai',
+      ml: 'ai',
+    };
+
+    function search(query: string): Entry[] {
+      const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+      if (!terms.length) return index.filter((e) => e.kind === 'flagship');
+      return index
+        .map((entry) => {
+          const title = entry.title.toLowerCase();
+          const hay = `${title} ${entry.text} ${entry.kind} ${entry.year} ${entry.disciplines.join(' ')}`.toLowerCase();
+          let score = 0;
+          for (const term of terms) {
+            if (!hay.includes(term)) return { entry, score: -1 };
+            score += title.includes(term) ? 3 : 1;
+          }
+          return { entry, score: score + (entry.kind === 'flagship' ? 0.5 : 0) };
+        })
+        .filter((r) => r.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map((r) => r.entry)
+        .slice(0, 12);
+    }
+
+    function render(entries: Entry[]): void {
+      active = 0;
+      list.replaceChildren(
+        ...entries.map((entry, i) => {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.href = entry.href;
+          if (entry.external) a.rel = 'noopener';
+          if (i === 0) a.dataset.active = '';
+          const yr = Object.assign(document.createElement('span'), { className: 'yr', textContent: entry.year });
+          const ti = Object.assign(document.createElement('span'), { textContent: entry.title });
+          const kd = Object.assign(document.createElement('span'), {
+            className: 'kd',
+            textContent: entry.external ? `${entry.kind} ↗` : entry.kind,
+          });
+          a.append(yr, ti, kd);
+          li.append(a);
+          return li;
+        }),
+      );
+    }
+
+    function print(text: string): void {
+      log.textContent = text;
+    }
+
+    const COMMANDS: Record<string, (arg: string) => void> = {
+      help: () =>
+        print(
+          [
+            'Type to search. Enter opens the first result, arrows move.',
+            '',
+            'ls [games|software|ai]   list work, optionally one discipline',
+            'only <discipline>        show just one discipline on the site',
+            'all                      switch every mask back on',
+            'dusk                     switch day and dusk colours',
+            'whoami                   who made this',
+            'contact                  how to reach me',
+            'guide                    bring Dorothy back',
+            'forget                   reset what the guide remembers',
+          ].join('\n'),
+        ),
+      ls: (arg) => {
+        const d = ALIASES[arg];
+        render(index.filter((e) => !d || e.disciplines.includes(d)));
+        print(d ? `Everything tagged ${d}.` : 'Everything, newest tier first.');
+      },
+      only: (arg) => {
+        const d = ALIASES[arg];
+        if (!d) return print('Usage: only games | software | ai');
+        setMasks([d]);
+        print(`Showing ${d} only. Type "all" to undo.`);
+      },
+      all: () => {
+        setMasks(['games', 'software', 'ai']);
+        print('All three masks on.');
+      },
+      dusk: () => {
+        toggleTheme();
+        print('Lights switched.');
+      },
+      whoami: () => print('Anders Emmanuel Tan. Game programmer and software engineer, Yogyakarta.'),
+      contact: () => print([profile.email, ...profile.links.map((l) => `${l.label}: ${l.href}`)].join('\n')),
+      guide: () => {
+        dialog.close();
+        document.dispatchEvent(new CustomEvent('pf:guide'));
+      },
+      forget: () => {
+        resetMemory();
+        print('The guide has forgotten you. Reload to meet again.');
+      },
+      masks: () => print(`On: ${activeMasks().join(', ') || 'none'}`),
+      sudo: () => print('Nice try.'),
+    };
+
+    function run(raw: string): boolean {
+      const [name = '', ...rest] = raw.trim().toLowerCase().split(/\s+/);
+      const command = COMMANDS[name];
+      if (!command) return false;
+      command(rest.join(' '));
+      return true;
+    }
+
+    function open(): void {
+      if (dialog!.open) return;
+      input.value = '';
+      print('');
+      render(search(''));
+      dialog!.showModal();
+      input.focus();
+    }
+
+    input.addEventListener('input', () => {
+      print('');
+      render(search(input.value));
+    });
+
+    input.addEventListener('keydown', (event) => {
+      const links = [...list.querySelectorAll<HTMLAnchorElement>('a')];
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (!links.length) return;
+        links[active]?.removeAttribute('data-active');
+        active = (active + (event.key === 'ArrowDown' ? 1 : -1) + links.length) % links.length;
+        links[active]!.dataset.active = '';
+        links[active]!.scrollIntoView({ block: 'nearest' });
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        if (run(input.value)) {
+          input.value = '';
+          return;
+        }
+        links[active]?.click();
+      }
+    });
+
+    document.querySelectorAll('[data-open-terminal]').forEach((btn) => btn.addEventListener('click', open));
+    document.addEventListener('pf:terminal', open);
+    document.addEventListener('keydown', (event) => {
+      const target = event.target as HTMLElement | null;
+      const typing = target?.closest('input, textarea, select, [contenteditable]');
+      if ((event.key === '/' && !typing) || (event.key.toLowerCase() === 'k' && (event.ctrlKey || event.metaKey))) {
+        event.preventDefault();
+        open();
+      }
+    });
+  }
+</script>

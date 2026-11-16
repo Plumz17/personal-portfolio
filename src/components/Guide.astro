@@ -1,0 +1,266 @@
+---
+// The site guide: Dorothy from Truths Astray, speaking through a web port of
+// that game's dialogue system, with her portraits from the game. The rest of
+// the cast use the same box when Astara talks to them in the hallway.
+// Scripts live in src/content/dialogue/*.md.
+import { parseDialogue } from '../lib/dialogue/parser';
+import { media } from '../lib/site';
+
+const files = import.meta.glob('../content/dialogue/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+
+const dialogues = Object.entries(files).map(([path, source]) =>
+  parseDialogue(path.split('/').pop()!.replace(/\.md$/, ''), source),
+);
+const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
+---
+
+<div class="guide" data-guide data-portraits={media('truths-astray/portraits/')} hidden>
+  <div class="guide-panel" data-guide-panel role="dialog" aria-label="Conversation" hidden data-keys>
+    <button type="button" class="guide-close" data-guide-close aria-label="Close conversation">×</button>
+    <div data-guide-view></div>
+  </div>
+  <button type="button" class="guide-launch" data-guide-launch aria-expanded="false">
+    <canvas class="guide-face" width="80" height="80" aria-hidden="true"></canvas>
+    <span class="guide-word">Talk</span>
+    <span class="guide-alert" data-guide-alert aria-hidden="true" hidden>!</span>
+  </button>
+</div>
+<script type="application/json" id="pf-dialogues" set:html={json} />
+
+<style>
+  .guide {
+    position: fixed;
+    right: clamp(0.5rem, 2vw, 1.25rem);
+    bottom: clamp(0.5rem, 2vw, 1.25rem);
+    z-index: 50;
+    display: grid;
+    justify-items: end;
+    gap: 0.6rem;
+    pointer-events: none;
+  }
+
+  .guide > * {
+    pointer-events: auto;
+  }
+
+  .guide-panel {
+    position: relative;
+    width: min(34rem, calc(100vw - 1rem));
+  }
+
+  .guide-close {
+    position: absolute;
+    top: -0.9rem;
+    right: -0.4rem;
+    z-index: 1;
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid #1d1a14;
+    background: #f0e6c0;
+    color: #1d1a14;
+    font-family: var(--font-pixel);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .guide-launch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.75rem;
+    padding: 0.2rem 0.7rem 0.2rem 0.25rem;
+    border: 2px solid #1d1a14;
+    background: #f0e6c0;
+    color: #1d1a14;
+    box-shadow: 3px 3px 0 #1d1a14;
+    font-family: var(--font-pixel);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.12s;
+  }
+
+  .guide-launch:hover {
+    transform: translate(-1px, -1px);
+  }
+
+  .guide-launch:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #1d1a14;
+  }
+
+  .guide-face {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: #cfc59c;
+  }
+
+  .guide-alert {
+    position: absolute;
+    top: -0.9rem;
+    left: 0.7rem;
+    display: grid;
+    place-items: center;
+    width: 1.3rem;
+    height: 1.3rem;
+    background: var(--games);
+    color: #fff;
+    font-weight: 600;
+    border: 2px solid #1d1a14;
+    animation: bob 0.9s steps(2) infinite;
+  }
+
+  .guide-alert[hidden] {
+    display: none;
+  }
+</style>
+
+<script>
+  import type { Dialogue, DialogueLine } from '../lib/dialogue/parser';
+  import { DialogueRunner, resolveDialogue } from '../lib/dialogue/runtime';
+  import { DialogueView, type PortraitSource } from '../lib/dialogue/view';
+  import { basePath, flags, reducedMotion, setMasks } from '../lib/state';
+  import type { Discipline } from '../lib/site';
+
+  const root = document.querySelector<HTMLElement>('[data-guide]');
+  const data = document.getElementById('pf-dialogues');
+
+  if (root && data) {
+    const dialogues = JSON.parse(data.textContent ?? '[]') as Dialogue[];
+    const panel = root.querySelector<HTMLElement>('[data-guide-panel]')!;
+    const launch = root.querySelector<HTMLButtonElement>('[data-guide-launch]')!;
+    const alert = root.querySelector<HTMLElement>('[data-guide-alert]')!;
+    const portraits = root.dataset.portraits ?? '';
+
+    // Page flags come from the layout; "visitor" is always true.
+    flags.setTransient('visitor');
+    (document.documentElement.dataset.flags ?? '')
+      .split(' ')
+      .filter(Boolean)
+      .forEach((flag) => flags.setTransient(flag));
+
+    // Portraits are the game's own files, one per character and expression.
+    const EXPRESSIONS: Record<string, string[]> = {
+      dorothy: ['neutral', 'happy', 'confused', 'unhappy', 'sad'],
+      sarah: ['neutral', 'happy', 'confused'],
+      wei: ['neutral', 'happy', 'confused'],
+      krishna: ['neutral', 'happy', 'confused'],
+      jenny: ['neutral', 'happy', 'confused'],
+    };
+    const resolvePortrait = (line: DialogueLine): PortraitSource | null => {
+      const known = EXPRESSIONS[line.name];
+      if (!known) return null;
+      const expression = known.includes(line.expression) ? line.expression : 'neutral';
+      return { src: `${portraits}${line.name}_${expression}.png` };
+    };
+
+    const view = new DialogueView(root.querySelector<HTMLElement>('[data-guide-view]')!, {
+      resolvePortrait,
+      instant: reducedMotion(),
+      onAdvance: () => runner.advance(),
+      onChoose: (option) => {
+        runner.choose(option);
+        view.focus();
+      },
+    });
+
+    const runner = new DialogueRunner(flags, {
+      onLine: (line) => view.showLine(line),
+      onChoice: (line, options) => view.showChoices(line, options),
+      onFinish: () => close(),
+      onModifiers: (modifiers) => modifiers.forEach(act),
+    });
+
+    /** Site actions carried on a choice, for example |go=/archive|. */
+    function act(modifier: string): void {
+      const [name, value = ''] = modifier.split('=');
+      switch (name) {
+        case 'filter':
+          setMasks(value === 'all' ? ['games', 'software', 'ai'] : [value as Discipline]);
+          break;
+        case 'go':
+          window.location.href = basePath() + value;
+          break;
+        case 'scroll':
+          document.getElementById(value)?.scrollIntoView({ block: 'start' });
+          break;
+        case 'next':
+          document.querySelector<HTMLAnchorElement>('[data-next-project]')?.click();
+          break;
+        case 'terminal':
+          document.dispatchEvent(new CustomEvent('pf:terminal'));
+          break;
+      }
+    }
+
+    function pick(): Dialogue | null {
+      return resolveDialogue(dialogues, flags);
+    }
+
+    function refresh(): void {
+      root!.hidden = flags.has('guide-muted');
+      const next = pick();
+      // The "!" marks something new: a one-time scene, or the masks all being off.
+      alert.hidden = !(next && (!next.repeatable || flags.has('masks-off')));
+    }
+
+    function open(chosen?: Dialogue): void {
+      const dialogue = chosen ?? pick();
+      if (!dialogue) return;
+      runner.stop();
+      panel.hidden = false;
+      launch.setAttribute('aria-expanded', 'true');
+      alert.hidden = true;
+      runner.start(dialogue);
+      view.focus();
+    }
+
+    function close(): void {
+      runner.stop();
+      view.clear();
+      panel.hidden = true;
+      launch.setAttribute('aria-expanded', 'false');
+      refresh();
+      if (!root!.hidden) launch.focus({ preventScroll: true });
+    }
+
+    launch.addEventListener('click', () => (panel.hidden ? open() : close()));
+    root.querySelector('[data-guide-close]')?.addEventListener('click', close);
+    panel.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') close();
+    });
+    document.addEventListener('pf:masks', () => {
+      if (panel.hidden) refresh();
+    });
+    // A hallway character asked for by name, e.g. pf:talk "Sarah".
+    document.addEventListener('pf:talk', (event) => {
+      const id = (event as CustomEvent<string>).detail;
+      const dialogue = dialogues.find((d) => d.id === id.toLowerCase());
+      if (dialogue) open(dialogue);
+    });
+    document.addEventListener('pf:guide', () => {
+      flags.clear('guide-muted');
+      refresh();
+      open();
+    });
+
+    // The launcher shows Dorothy's face, cut from her neutral portrait.
+    const face = root.querySelector<HTMLCanvasElement>('.guide-face');
+    const ctx = face?.getContext('2d');
+    if (face && ctx && portraits) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 48, 22, 104, 104, 0, 0, face.width, face.height);
+      };
+      img.src = `${portraits}dorothy_neutral.png`;
+    }
+
+    refresh();
+  }
+</script>

@@ -1,0 +1,738 @@
+---
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import WalkStrip from '../components/WalkStrip.astro';
+import ShareBar from '../components/ShareBar.astro';
+import { DISCIPLINES, DISCIPLINE_KEYS, url } from '../lib/site';
+import { awards, leadership, profile, skills } from '../data/profile';
+import { archive } from '../data/archive';
+
+const all = await getCollection('projects');
+const flagships = all.filter((p) => p.data.tier === 'flagship').sort((a, b) => a.data.order - b.data.order);
+const projects = all.filter((p) => p.data.tier === 'project').sort((a, b) => a.data.order - b.data.order);
+const count = (d: string) => all.filter((p) => (p.data.disciplines as string[]).includes(d)).length;
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<Base flags={['at-home']}>
+  <section class="hero wrap">
+    <p class="label">{profile.location} · Computer Science at Universitas Gadjah Mada</p>
+    <h1>
+      Anders Tan<i class="hero-mark" aria-hidden="true"><b data-d="games"></b><b data-d="software"></b><b data-d="ai"></b></i>
+    </h1>
+    <div class="hero-grid">
+      <p class="lede">
+        Game programmer and software engineer. I build{' '}
+        <button type="button" class="solo" data-solo="games" data-d="games">games</button>, the{' '}
+        <button type="button" class="solo" data-solo="software" data-d="software">software</button>{' '}
+        around them, and{' '}
+        <button type="button" class="solo" data-solo="ai" data-d="ai">machine-learning</button>{' '}
+        pipelines that I test until I know where they break.
+      </p>
+      <ul class="tally">
+        {
+          DISCIPLINE_KEYS.map((d) => (
+            <li data-d={d}>
+              <span class="tally-n">{pad(count(d))}</span>
+              <span class="tally-l">
+                <span class="dot" /> {DISCIPLINES[d].label}
+                <small>{DISCIPLINES[d].blurb}</small>
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <p class="hint label">
+      Press <kbd class="key">1</kbd> <kbd class="key">2</kbd> <kbd class="key">3</kbd> to switch a discipline off and on ·
+      <kbd class="key">/</kbd> to search
+    </p>
+  </section>
+
+  <WalkStrip />
+
+  <section class="section wrap" id="work" data-filter-group>
+    <div class="section-head">
+      <h2>Selected work</h2>
+      <span class="label">{flagships.length} case studies</span>
+    </div>
+
+    {
+      flagships.map((p, i) => (
+        <article class="flag" data-disc={p.data.disciplines.join(' ')}>
+          <a class="flag-link" href={url(`work/${p.id}`)}>
+            <div class="flag-text">
+              <p class="flag-meta label">
+                <span class="flag-n">{pad(i + 1)}</span>
+                <span class="dots">
+                  {p.data.disciplines.map((d) => (
+                    <span class="dot" data-d={d} title={DISCIPLINES[d].label} />
+                  ))}
+                </span>
+                <span>{p.data.year}</span>
+                <span>{p.data.context.split('.')[0]}</span>
+              </p>
+              <h3>{p.data.title}</h3>
+              <p class="flag-tag">{p.data.tagline}</p>
+              <dl class="flag-facts">
+                <div>
+                  <dt class="label">Role</dt>
+                  <dd>{p.data.role}</dd>
+                </div>
+                <div>
+                  <dt class="label">Built with</dt>
+                  <dd>{p.data.stack.slice(0, 4).join(', ')}</dd>
+                </div>
+              </dl>
+              {p.data.share && <ShareBar {...p.data.share} compact />}
+              <span class="flag-go label">Read the case study →</span>
+            </div>
+            <div class="flag-media">
+              {p.data.cover ? (
+                <Image
+                  src={p.data.cover}
+                  alt={p.data.coverAlt}
+                  widths={[480, 800, 1200]}
+                  sizes="(max-width: 860px) 100vw, 46vw"
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                />
+              ) : (
+                <div class="poster" data-d={p.data.disciplines[0]}>
+                  {p.data.stats.slice(0, 2).map((s) => (
+                    <p>
+                      <strong>{s.value}</strong>
+                      <span>{s.label}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </a>
+        </article>
+      ))
+    }
+    <p class="empty" data-filter-empty hidden>
+      Every mask that applies here is off, so nothing exists. Press <kbd class="key">1</kbd> <kbd class="key">2</kbd>
+      <kbd class="key">3</kbd> to bring work back.
+    </p>
+  </section>
+
+  <section class="section wrap" id="more" data-filter-group>
+    <div class="section-head">
+      <h2>More projects</h2>
+      <a class="label" href={url('/archive')}>and {archive.length} more in the archive →</a>
+    </div>
+    <ul class="rows">
+      {
+        projects.map((p) => (
+          <li data-disc={p.data.disciplines.join(' ')}>
+            <a href={url(`work/${p.id}`)}>
+              <span class="row-year label">{p.data.year}</span>
+              <span class="row-main">
+                <strong>{p.data.title}</strong>
+                <span>{p.data.tagline}</span>
+              </span>
+              <span class="row-role label">{p.data.role}</span>
+              <span class="dots">
+                {p.data.disciplines.map((d) => (
+                  <span class="dot" data-d={d} title={DISCIPLINES[d].label} />
+                ))}
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="empty" data-filter-empty hidden>Nothing here matches the masks that are on.</p>
+  </section>
+
+  <section class="section wrap" id="leadership">
+    <div class="section-head">
+      <h2>Leading and teaching</h2>
+      <span class="label">2024 to now</span>
+    </div>
+    <div class="roles">
+      {
+        leadership.map((role) => (
+          <article class="role">
+            <p class="label">{role.years}</p>
+            <div>
+              <h3>{role.title}</h3>
+              <p class="role-org">{role.org}</p>
+              <ul>
+                {role.points.map((point) => (
+                  <li>{point}</li>
+                ))}
+              </ul>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="section wrap" id="about">
+    <div class="section-head">
+      <h2>About</h2>
+      <span class="label">{profile.languages}</span>
+    </div>
+    <div class="about">
+      <div class="about-text">
+        <p class="about-lede">
+          I like the parts of a game most players never notice: the format a writer types dialogue into, the menu that lays
+          itself out, the jump that forgives you by a tenth of a second.
+        </p>
+        <p>
+          I'm a Computer Science student at Universitas Gadjah Mada in Yogyakarta, and I head the game development
+          division at KOMATIK UGM. Most of what I make starts as a system someone else has to use, whether that is a
+          teammate writing story, a designer tuning a level, or another team calling an API.
+        </p>
+        <p>
+          The same habit carries into software and machine learning. Build the thing, then measure it honestly, including
+          the cases where it fails.
+        </p>
+
+        <h3 class="sub">Education</h3>
+        <ul class="plain">
+          {
+            profile.education.map((e) => (
+              <li>
+                <strong>{e.place}</strong>
+                <span>
+                  {e.detail}. {e.extra}.
+                </span>
+                <span class="label">{e.years}</span>
+              </li>
+            ))
+          }
+        </ul>
+
+        <h3 class="sub">Tools I reach for</h3>
+        <dl class="skills">
+          {
+            skills.map((s) => (
+              <div>
+                <dt class="label">{s.group}</dt>
+                <dd>{s.items.join(' · ')}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+
+      <div class="about-side">
+        <h3 class="sub">Awards and certifications</h3>
+        <ol class="awards">
+          {
+            awards.map((a) => (
+              <li>
+                <span class="label">{a.year}</span>
+                <span>
+                  {a.href ? <a href={url(a.href)}>{a.title}</a> : <strong>{a.title}</strong>}
+                  {a.detail && <small>{a.detail}</small>}
+                </span>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section wrap contact" id="contact">
+    <p class="label">Open to game programming and software engineering roles and internships</p>
+    <a class="mail" href={`mailto:${profile.email}`}>{profile.email}</a>
+    <ul class="links">
+      {
+        profile.links.map((link) => (
+          <li>
+            <a class="btn" href={link.href}>
+              {link.label} <span aria-hidden="true">↗</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</Base>
+
+<style>
+  /* ---- Hero ---------------------------------------------------------- */
+  .hero {
+    padding-top: clamp(2rem, 6vw, 5rem);
+  }
+
+  .hero h1 {
+    margin: 0.6rem 0 0 -0.03em;
+    font-size: clamp(2.6rem, 18.2vw, 17.5rem);
+    font-variation-settings: 'wdth' 75;
+    line-height: 0.82;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* Three overlapping discs after the name: the three disciplines. */
+  .hero-mark {
+    display: inline-flex;
+    margin-left: 0.08em;
+    isolation: isolate;
+    vertical-align: 0.02em;
+  }
+
+  .hero-mark b {
+    width: 0.3em;
+    height: 0.3em;
+    border-radius: 50%;
+    background: var(--d);
+    mix-blend-mode: var(--blend);
+    animation: settle 0.9s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  }
+
+  .hero-mark b + b {
+    margin-left: -0.11em;
+  }
+
+  .hero-mark b:nth-child(2) {
+    animation-delay: 0.08s;
+  }
+
+  .hero-mark b:nth-child(3) {
+    animation-delay: 0.16s;
+  }
+
+  @keyframes settle {
+    from {
+      transform: translateY(-0.6em);
+      opacity: 0;
+    }
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: clamp(1.5rem, 5vw, 5rem);
+    align-items: end;
+    margin-top: clamp(1.5rem, 4vw, 3rem);
+  }
+
+  .lede {
+    margin: 0;
+    font-size: clamp(1.35rem, 2.6vw, 2.15rem);
+    line-height: 1.22;
+    letter-spacing: -0.012em;
+    max-width: 26ch;
+  }
+
+  .solo {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--d-ink);
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.14em;
+  }
+
+  .solo:hover {
+    background: var(--d);
+    color: var(--paper);
+    text-decoration: none;
+  }
+
+  .tally {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--rule);
+  }
+
+  .tally li {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .tally-n {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--d-ink);
+    min-width: 2ch;
+  }
+
+  .tally-l {
+    font-weight: 700;
+  }
+
+  .tally-l small {
+    display: block;
+    font-weight: 400;
+    font-size: 0.86rem;
+    color: var(--ink-2);
+  }
+
+  .hint {
+    margin-top: 1.5rem;
+    max-width: none;
+  }
+
+  /* ---- Flagship rows ------------------------------------------------- */
+  .flag {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .flag-link {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: clamp(1.25rem, 4vw, 4rem);
+    align-items: center;
+    padding-block: clamp(1.75rem, 4vw, 3.5rem);
+    text-decoration: none;
+  }
+
+  .flag:nth-of-type(even) .flag-media {
+    order: -1;
+  }
+
+  .flag-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.9rem;
+    margin: 0 0 0.9rem;
+    max-width: none;
+  }
+
+  .flag-n {
+    color: var(--ink);
+    font-size: 0.9rem;
+  }
+
+  .flag h3 {
+    font-size: clamp(2.6rem, 6.4vw, 5.8rem);
+    text-transform: uppercase;
+    transition: letter-spacing 0.25s;
+  }
+
+  .flag-link:hover h3 {
+    letter-spacing: 0;
+  }
+
+  .flag-tag {
+    margin: 0.9rem 0 1.2rem;
+    font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+    line-height: 1.35;
+    max-width: 40ch;
+  }
+
+  .flag-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0 0 1.1rem;
+  }
+
+  .flag-facts dd {
+    margin: 0.15rem 0 0;
+    font-size: 0.95rem;
+    line-height: 1.35;
+  }
+
+  .flag-go {
+    display: inline-block;
+    margin-top: 1rem;
+    color: var(--ink);
+    border-bottom: 1px solid var(--ink);
+    padding-bottom: 0.15rem;
+  }
+
+  .flag-media {
+    position: relative;
+    border: 1px solid var(--rule);
+    background: var(--paper-2);
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+  }
+
+  .flag-media :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .flag-link:hover .flag-media :global(img) {
+    transform: scale(1.035);
+  }
+
+  /* Poster for projects with no screenshot: their headline numbers. */
+  .poster {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 100%;
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .poster p {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    margin: 0;
+    padding: clamp(0.8rem, 2vw, 1.5rem);
+  }
+
+  .poster p + p {
+    border-left: 1px solid color-mix(in srgb, var(--paper) 35%, transparent);
+    color: var(--d);
+  }
+
+  .poster strong {
+    font-size: clamp(3rem, 9vw, 7.5rem);
+    font-variation-settings: 'wdth' 75;
+    line-height: 0.8;
+    letter-spacing: -0.02em;
+  }
+
+  .poster span {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .empty {
+    margin: 0;
+    padding: 2rem 0;
+    max-width: none;
+    font-family: var(--font-pixel);
+    font-size: 1.1rem;
+    border-bottom: 1px dashed var(--rule);
+  }
+
+  /* ---- Project rows -------------------------------------------------- */
+  .rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .rows li {
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 28%, transparent);
+  }
+
+  .rows a {
+    display: grid;
+    grid-template-columns: 3.2rem minmax(0, 1fr) minmax(0, 14rem) auto;
+    gap: 0.4rem 1.25rem;
+    align-items: baseline;
+    padding: 1rem 0;
+    text-decoration: none;
+    transition:
+      padding 0.2s,
+      background 0.2s;
+  }
+
+  .rows a:hover {
+    padding-inline: 0.75rem;
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .rows a:hover .label {
+    color: inherit;
+  }
+
+  .row-main strong {
+    display: block;
+    font-size: 1.3rem;
+    font-variation-settings: 'wdth' 84;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+
+  .row-main span {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    opacity: 0.8;
+    max-width: 62ch;
+  }
+
+  /* ---- Leadership ---------------------------------------------------- */
+  .role {
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: 1rem 2rem;
+    padding: 1.6rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 28%, transparent);
+  }
+
+  .role h3 {
+    font-size: clamp(1.4rem, 2.6vw, 2rem);
+    line-height: 1.05;
+  }
+
+  .role-org {
+    margin: 0.2rem 0 0.7rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  .role ul {
+    margin: 0;
+    padding-left: 1.1em;
+    max-width: 66ch;
+  }
+
+  .role li {
+    margin-bottom: 0.35rem;
+  }
+
+  /* ---- About --------------------------------------------------------- */
+  .about {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    padding-top: 2rem;
+  }
+
+  .about-lede {
+    font-size: clamp(1.3rem, 2.3vw, 1.85rem);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    max-width: 30ch;
+  }
+
+  .sub {
+    margin: 2.2rem 0 0.8rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    font-variation-settings: normal;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    line-height: 1.4;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .about-side .sub {
+    margin-top: 0;
+  }
+
+  .plain,
+  .awards {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .plain li {
+    display: grid;
+    gap: 0.1rem;
+    padding: 0.5rem 0;
+  }
+
+  .skills {
+    display: grid;
+    gap: 0.7rem;
+    margin: 0;
+  }
+
+  .skills dd {
+    margin: 0.1rem 0 0;
+  }
+
+  .awards li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  }
+
+  .awards small {
+    display: block;
+    font-size: 0.88rem;
+    color: var(--ink-2);
+  }
+
+  /* ---- Contact ------------------------------------------------------- */
+  .contact {
+    text-align: left;
+  }
+
+  .mail {
+    display: block;
+    margin: 0.6rem 0 1.5rem;
+    font-size: clamp(1.7rem, 7.2vw, 6rem);
+    font-weight: 800;
+    font-variation-settings: 'wdth' 75;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  .mail:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 0.06em;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (max-width: 860px) {
+    .hero-grid,
+    .flag-link,
+    .about {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .flag .flag-media,
+    .flag:nth-of-type(even) .flag-media {
+      order: -1;
+    }
+    .rows a {
+      grid-template-columns: 3rem minmax(0, 1fr) auto;
+    }
+    .row-role {
+      display: none;
+    }
+    .role {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.3rem;
+    }
+  }
+</style>
+
+<script>
+  import { soloMask } from '../lib/state';
+  import type { Discipline } from '../lib/site';
+
+  // The coloured words in the intro show one discipline alone; click again to restore.
+  document.querySelectorAll<HTMLButtonElement>('[data-solo]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      soloMask(btn.dataset.solo as Discipline);
+      document.getElementById('work')?.scrollIntoView({ block: 'start' });
+    });
+  });
+</script>

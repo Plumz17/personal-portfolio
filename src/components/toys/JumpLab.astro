@@ -1,0 +1,492 @@
+---
+// Phase Reveal: the player controller, ported from entities/player/player.gd
+// with the game's constants. Sliders expose the three "forgiveness" values.
+import { media } from '../../lib/site';
+
+const assets = {
+  idle: media('phase-reveal/monkey-idle.png'),
+  run: media('phase-reveal/monkey-run.png'),
+  jump: media('phase-reveal/monkey-jump.png'),
+  backs: [4, 3, 2, 1].map((n) => media(`phase-reveal/back${n}.png`)),
+};
+---
+
+<div class="toy jump" data-jump data-assets={JSON.stringify(assets)}>
+  <div class="toy-head">
+    <strong>Controller sandbox</strong>
+    <span class="label">Click the scene, then A / D or arrows to move, Space to jump</span>
+  </div>
+
+  <div class="jump-grid">
+    <div class="jump-stage" data-jump-stage tabindex="0" role="group" aria-label="Platformer sandbox. Arrow keys move, space jumps." data-keys>
+      <canvas class="pixel" width="480" height="270" data-jump-canvas></canvas>
+      <div class="jump-pad">
+        <span>
+          <button type="button" data-jump-btn="left" aria-label="Move left">◀</button>
+          <button type="button" data-jump-btn="right" aria-label="Move right">▶</button>
+        </span>
+        <button type="button" data-jump-btn="jump" aria-label="Jump">▲</button>
+      </div>
+    </div>
+
+    <div class="jump-side">
+      <div class="field">
+        <div class="field-row">
+          <label for="jl-coyote">Coyote time</label>
+          <output data-out="coyote">0.10 s</output>
+        </div>
+        <input id="jl-coyote" type="range" min="0" max="0.3" step="0.01" value="0.1" data-param="coyote" />
+      </div>
+      <div class="field">
+        <div class="field-row">
+          <label for="jl-buffer">Jump buffer</label>
+          <output data-out="buffer">0.10 s</output>
+        </div>
+        <input id="jl-buffer" type="range" min="0" max="0.3" step="0.01" value="0.1" data-param="buffer" />
+      </div>
+      <div class="field">
+        <div class="field-row">
+          <label for="jl-gravity">Early-release gravity</label>
+          <output data-out="gravity">× 1.2</output>
+        </div>
+        <input id="jl-gravity" type="range" min="1" max="4" step="0.1" value="1.2" data-param="gravity" />
+      </div>
+
+      <dl class="readout" aria-live="off">
+        <div><dt>BUFF</dt><dd data-read="buff">0.00</dd></div>
+        <div><dt>COY</dt><dd data-read="coy">0.00</dd></div>
+        <div><dt>GRAV</dt><dd data-read="grav">980</dd></div>
+        <div><dt>AVA</dt><dd data-read="ava">true</dd></div>
+      </dl>
+
+      <p class="saves">
+        Jumps the assists saved: <strong data-read="coyote-saves">0</strong> by coyote time,{' '}
+        <strong data-read="buffer-saves">0</strong> by buffering.
+      </p>
+      <button type="button" class="btn" data-jump-reset>Game defaults</button>
+    </div>
+  </div>
+
+  <div class="toy-note">
+    <p>
+      Speed 150, jump velocity −270, gravity 980, terminal velocity 500: the values in the shipped game. Set both timers
+      to zero and try the gap; then put them back.
+    </p>
+  </div>
+</div>
+
+<style>
+  .jump-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+  }
+
+  .jump-stage {
+    position: relative;
+    background: #0d1310;
+    border-right: 1px solid var(--rule);
+    cursor: pointer;
+    touch-action: none;
+  }
+
+  .jump-stage:focus-visible {
+    outline-offset: -4px;
+  }
+
+  canvas {
+    width: 100%;
+    height: auto;
+  }
+
+  .jump-pad {
+    position: absolute;
+    inset: auto 0.5rem 0.5rem 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+
+  .jump-pad span {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .jump-pad button {
+    width: 3rem;
+    height: 3rem;
+    border: 2px solid #f0e6c0;
+    background: rgb(20 24 20 / 0.7);
+    color: #f0e6c0;
+    font-size: 1rem;
+    cursor: pointer;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .jump-pad button:active {
+    background: #f0e6c0;
+    color: #141814;
+  }
+
+  .jump-side {
+    display: grid;
+    align-content: start;
+    gap: 0.9rem;
+    padding: 0.9rem;
+  }
+
+  .jump-side label {
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  /* The same four values the game's debug label prints above the monkey. */
+  .readout {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin: 0;
+    border: 1px solid var(--rule);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+  }
+
+  .readout div {
+    padding: 0.35rem 0.4rem;
+  }
+
+  .readout div + div {
+    border-left: 1px solid var(--rule);
+  }
+
+  .readout dt {
+    color: var(--ink-2);
+  }
+
+  .readout dd {
+    margin: 0;
+    font-size: 0.85rem;
+  }
+
+  .saves {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 860px) {
+    .jump-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .jump-stage {
+      border-right: 0;
+      border-bottom: 1px solid var(--rule);
+    }
+  }
+</style>
+
+<script>
+  import { reducedMotion } from '../../lib/state';
+
+  interface Assets {
+    idle: string;
+    run: string;
+    jump: string;
+    backs: string[];
+  }
+
+  // Constants from entities/player/player.gd.
+  const SPEED = 150;
+  const JUMP_VELOCITY = -270;
+  const TERMINAL_VELOCITY = 500;
+  const DEFAULT_GRAVITY = 980;
+  const DEFAULTS = { coyote: 0.1, buffer: 0.1, gravity: 1.2 };
+
+  const W = 480;
+  const H = 270;
+  const STEP = 1 / 60;
+  const BODY = { w: 14, h: 30 }; // collision box inside the 30x45 sprite
+  const SPAWN = { x: 60, y: 120 };
+
+  // A single screen: a ledge to walk off, a gap to clear, steps to climb.
+  const PLATFORMS = [
+    { x: 0, y: 238, w: 168, h: 32 },
+    { x: 236, y: 238, w: 244, h: 32 },
+    { x: 24, y: 176, w: 96, h: 10 },
+    { x: 286, y: 196, w: 62, h: 10 },
+    { x: 384, y: 156, w: 72, h: 10 },
+  ];
+
+  const load = (src: string): HTMLImageElement => Object.assign(new Image(), { src });
+
+  document.querySelectorAll<HTMLElement>('[data-jump]').forEach((root) => {
+    const assets = JSON.parse(root.dataset.assets ?? '{}') as Assets;
+    const stage = root.querySelector<HTMLElement>('[data-jump-stage]')!;
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-jump-canvas]')!;
+    const ctx = canvas.getContext('2d')!;
+    ctx.imageSmoothingEnabled = false;
+
+    const sheets = { idle: load(assets.idle), run: load(assets.run), jump: load(assets.jump) };
+    const backs = assets.backs.map(load);
+    const read = (name: string) => root.querySelector<HTMLElement>(`[data-read="${name}"]`)!;
+    const params = { ...DEFAULTS };
+
+    const input = { left: false, right: false, jump: false };
+    let jumpWas = false;
+
+    // Player state, named as in the GDScript.
+    const p = {
+      x: SPAWN.x,
+      y: SPAWN.y,
+      vx: 0,
+      vy: 0,
+      onFloor: false,
+      jumpAvailable: true,
+      jumpBuffer: false,
+      bufferLeft: 0,
+      coyoteLeft: 0,
+      coyoteRunning: false,
+      gravity: DEFAULT_GRAVITY,
+      facing: 1,
+    };
+    let coyoteSaves = 0;
+    let bufferSaves = 0;
+    let note = '';
+    let noteLeft = 0;
+    let clock = 0;
+
+    function respawn(): void {
+      Object.assign(p, { x: SPAWN.x, y: SPAWN.y, vx: 0, vy: 0, jumpAvailable: true, jumpBuffer: false });
+    }
+
+    function jump(cause: 'floor' | 'coyote' | 'buffer'): void {
+      p.vy = JUMP_VELOCITY;
+      p.jumpAvailable = false;
+      p.jumpBuffer = false;
+      p.coyoteRunning = false;
+      if (cause === 'coyote') {
+        coyoteSaves += 1;
+        note = 'coyote time';
+        noteLeft = 0.8;
+      } else if (cause === 'buffer') {
+        bufferSaves += 1;
+        note = 'buffered';
+        noteLeft = 0.8;
+      }
+    }
+
+    function overlaps(x: number, y: number) {
+      return PLATFORMS.find(
+        (r) => x + BODY.w / 2 > r.x && x - BODY.w / 2 < r.x + r.w && y > r.y && y - BODY.h < r.y + r.h,
+      );
+    }
+
+    function tick(dt: number): void {
+      const pressed = input.jump && !jumpWas;
+      const released = !input.jump && jumpWas;
+      jumpWas = input.jump;
+
+      // Timers.
+      if (p.bufferLeft > 0 && (p.bufferLeft -= dt) <= 0) p.jumpBuffer = false;
+      if (p.coyoteRunning && (p.coyoteLeft -= dt) <= 0) {
+        p.coyoteRunning = false;
+        p.jumpAvailable = false;
+      }
+
+      // handle_fall()
+      if (!p.onFloor) {
+        if (p.jumpAvailable && !p.coyoteRunning) {
+          if (params.coyote <= 0) p.jumpAvailable = false;
+          else {
+            p.coyoteRunning = true;
+            p.coyoteLeft = params.coyote;
+          }
+        }
+        if (p.vy < 0 && released) p.gravity = DEFAULT_GRAVITY * params.gravity;
+        p.vy += p.gravity * dt;
+      } else {
+        p.jumpAvailable = true;
+        p.gravity = DEFAULT_GRAVITY;
+        p.coyoteRunning = false;
+        if (p.jumpBuffer && p.bufferLeft > 0) jump('buffer');
+      }
+
+      // handle_jump()
+      if (pressed) {
+        if (p.jumpAvailable) jump(p.onFloor ? 'floor' : 'coyote');
+        else if (params.buffer > 0) {
+          p.jumpBuffer = true;
+          p.bufferLeft = params.buffer;
+        }
+      }
+
+      // handle_movement()
+      const dir = Number(input.right) - Number(input.left);
+      p.vx = dir * SPEED;
+      if (dir !== 0) p.facing = dir;
+      if (p.vy > TERMINAL_VELOCITY) p.vy = TERMINAL_VELOCITY;
+
+      // move_and_slide(), one axis at a time.
+      p.x = Math.max(BODY.w / 2, Math.min(W - BODY.w / 2, p.x + p.vx * dt));
+      const side = overlaps(p.x, p.y);
+      if (side) p.x = p.vx > 0 ? side.x - BODY.w / 2 : side.x + side.w + BODY.w / 2;
+
+      p.y += p.vy * dt;
+      p.onFloor = false;
+      const hit = overlaps(p.x, p.y);
+      if (hit) {
+        if (p.vy >= 0) {
+          p.y = hit.y;
+          p.onFloor = true;
+        } else {
+          p.y = hit.y + hit.h + BODY.h;
+        }
+        p.vy = 0;
+      } else if (p.vy >= 0 && overlaps(p.x, p.y + 1)) {
+        // Standing exactly on a surface: the equivalent of Godot's floor snap.
+        p.onFloor = true;
+      }
+      if (p.y > H + 60) respawn();
+
+      clock += dt;
+      if (noteLeft > 0) noteLeft -= dt;
+    }
+
+    function draw(): void {
+      ctx.fillStyle = '#0d1310';
+      ctx.fillRect(0, 0, W, H);
+      backs.forEach((img, i) => {
+        if (!img.complete || !img.naturalWidth) return;
+        const shift = Math.round((p.x / W) * (i + 1) * 10);
+        ctx.drawImage(img, -shift, 0);
+      });
+
+      for (const r of PLATFORMS) {
+        ctx.fillStyle = '#16211b';
+        ctx.fillRect(r.x, r.y, r.w, r.h);
+        ctx.fillStyle = '#8fd0a0';
+        ctx.fillRect(r.x, r.y, r.w, 2);
+      }
+
+      let sheet = sheets.idle;
+      let sx = (Math.floor(clock * 5) % 5) * 30;
+      if (!p.onFloor) {
+        sheet = sheets.jump;
+        sx = p.vy < 0 ? 180 : 210;
+      } else if (p.vx !== 0) {
+        sheet = sheets.run;
+        sx = (Math.floor(clock * 8) % 5) * 30;
+      } else if (reducedMotion()) {
+        sx = 0;
+      }
+      if (sheet.complete && sheet.naturalWidth) {
+        const dx = Math.round(p.x - 15);
+        const dy = Math.round(p.y - 45);
+        ctx.save();
+        if (p.facing < 0) {
+          ctx.translate(dx + 30, dy);
+          ctx.scale(-1, 1);
+          ctx.drawImage(sheet, sx, 0, 30, 45, 0, 0, 30, 45);
+        } else {
+          ctx.drawImage(sheet, sx, 0, 30, 45, dx, dy, 30, 45);
+        }
+        ctx.restore();
+      }
+
+      if (noteLeft > 0) {
+        ctx.font = '10px "Pixelify Sans", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#f0e6c0';
+        ctx.fillText(note, Math.round(p.x), Math.round(p.y - 50));
+      }
+
+      read('buff').textContent = Math.max(0, p.jumpBuffer ? p.bufferLeft : 0).toFixed(2);
+      read('coy').textContent = Math.max(0, p.coyoteRunning ? p.coyoteLeft : 0).toFixed(2);
+      read('grav').textContent = p.gravity.toFixed(0);
+      read('ava').textContent = String(p.jumpAvailable);
+      read('coyote-saves').textContent = String(coyoteSaves);
+      read('buffer-saves').textContent = String(bufferSaves);
+    }
+
+    // Fixed 60 Hz physics, like _physics_process.
+    let last = 0;
+    let acc = 0;
+    let visible = false;
+    function frame(now: number): void {
+      if (visible) {
+        acc += Math.min(0.1, (now - last) / 1000 || 0);
+        while (acc >= STEP) {
+          tick(STEP);
+          acc -= STEP;
+        }
+        draw();
+      }
+      last = now;
+      requestAnimationFrame(frame);
+    }
+
+    const KEYS: Record<string, keyof typeof input> = {
+      arrowleft: 'left',
+      a: 'left',
+      arrowright: 'right',
+      d: 'right',
+      ' ': 'jump',
+      w: 'jump',
+      arrowup: 'jump',
+    };
+    stage.addEventListener('keydown', (event) => {
+      const action = KEYS[event.key.toLowerCase()];
+      if (!action) return;
+      input[action] = true;
+      event.preventDefault();
+    });
+    stage.addEventListener('keyup', (event) => {
+      const action = KEYS[event.key.toLowerCase()];
+      if (action) input[action] = false;
+    });
+    stage.addEventListener('blur', () => Object.assign(input, { left: false, right: false, jump: false }));
+    canvas.addEventListener('pointerdown', () => stage.focus({ preventScroll: true }));
+
+    root.querySelectorAll<HTMLButtonElement>('[data-jump-btn]').forEach((btn) => {
+      const action = btn.dataset.jumpBtn as keyof typeof input;
+      const set = (on: boolean) => (event: Event) => {
+        event.preventDefault();
+        input[action] = on;
+      };
+      btn.addEventListener('pointerdown', (event) => {
+        btn.setPointerCapture(event.pointerId);
+        set(true)(event);
+      });
+      btn.addEventListener('pointerup', set(false));
+      btn.addEventListener('pointercancel', set(false));
+      btn.addEventListener('keydown', (event) => {
+        if (event.key === ' ' || event.key === 'Enter') set(true)(event);
+      });
+      btn.addEventListener('keyup', set(false));
+    });
+
+    function syncOutputs(): void {
+      root.querySelector('[data-out="coyote"]')!.textContent = `${params.coyote.toFixed(2)} s`;
+      root.querySelector('[data-out="buffer"]')!.textContent = `${params.buffer.toFixed(2)} s`;
+      root.querySelector('[data-out="gravity"]')!.textContent = `× ${params.gravity.toFixed(1)}`;
+    }
+    root.querySelectorAll<HTMLInputElement>('[data-param]').forEach((slider) => {
+      slider.addEventListener('input', () => {
+        params[slider.dataset.param as keyof typeof params] = Number(slider.value);
+        syncOutputs();
+      });
+    });
+    root.querySelector('[data-jump-reset]')?.addEventListener('click', () => {
+      Object.assign(params, DEFAULTS);
+      root.querySelectorAll<HTMLInputElement>('[data-param]').forEach((slider) => {
+        slider.value = String(DEFAULTS[slider.dataset.param as keyof typeof DEFAULTS]);
+      });
+      coyoteSaves = bufferSaves = 0;
+      syncOutputs();
+      respawn();
+    });
+
+    new IntersectionObserver(([entry]) => (visible = entry?.isIntersecting ?? false)).observe(stage);
+    requestAnimationFrame(frame);
+  });
+</script>

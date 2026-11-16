@@ -1,0 +1,60 @@
+---
+import Base from '../layouts/Base.astro';
+import { media, url } from '../lib/site';
+---
+
+<Base title="Not found" flags={['at-lost']}>
+  <section class="lost wrap">
+    <p class="label">Error 404</p>
+    <h1>Phased out</h1>
+    <p class="msg">
+      This page is not in any plane of existence. It may have been renamed, or the link was wrong from the start.
+    </p>
+    <div class="actions">
+      <a class="btn" href={url('/')}>Back home</a>
+      <button type="button" class="btn" data-open-terminal>Search instead</button>
+    </div>
+    <div class="monkey pixel" style={`background-image:url(${media('phase-reveal/monkey-idle.png')})`} aria-hidden="true"></div>
+  </section>
+</Base>
+
+<style>
+  .lost {
+    padding-block: clamp(3rem, 10vw, 8rem);
+  }
+  h1 {
+    margin: 0.5rem 0 1.2rem;
+    font-size: clamp(3.4rem, 15vw, 13rem);
+    font-variation-settings: 'wdth' 75;
+    letter-spacing: -0.02em;
+    line-height: 0.82;
+    text-transform: uppercase;
+    color: transparent;
+    -webkit-text-stroke: 2px var(--ink);
+  }
+  .msg {
+    font-size: 1.2rem;
+    max-width: 44ch;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+  /* The Phase Reveal monkey, idling: five 30x45 frames. */
+  .monkey {
+    width: 30px;
+    height: 45px;
+    margin-top: 3rem;
+    scale: 3;
+    transform-origin: top left;
+    background-size: 150px 45px;
+    animation: idle 1s steps(5) infinite;
+  }
+  @keyframes idle {
+    to {
+      background-position: -150px 0;
+    }
+  }
+</style>

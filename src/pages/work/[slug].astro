@@ -1,0 +1,394 @@
+---
+import { Image } from 'astro:assets';
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ShareBar from '../../components/ShareBar.astro';
+import { toys } from '../../components/toys/registry';
+import { DISCIPLINES, url } from '../../lib/site';
+
+export async function getStaticPaths() {
+  const all = await getCollection('projects');
+  // One reading order for "next project": flagships first, then the rest.
+  const ordered = all.sort((a, b) =>
+    a.data.tier === b.data.tier ? a.data.order - b.data.order : a.data.tier === 'flagship' ? -1 : 1,
+  );
+  return ordered.map((entry, i) => ({
+    params: { slug: entry.id },
+    props: { entry, next: ordered[(i + 1) % ordered.length]!, position: i + 1, total: ordered.length },
+  }));
+}
+
+const { entry, next, position, total } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+const Toy = data.toy ? toys[data.toy] : undefined;
+
+const flags = ['at-project', `at-${entry.id}`];
+if (Toy) flags.push('has-toy');
+if (data.credits) flags.push('has-credits');
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<Base title={data.title} description={data.tagline} flags={flags} image={data.cover?.src}>
+  <article data-project={entry.id}>
+    <header class="top wrap">
+      <p class="crumbs label">
+        <a href={url('/#work')}>Work</a>
+        <span aria-hidden="true">/</span>
+        <span>{data.tier === 'flagship' ? 'Case study' : 'Project'} {pad(position)} of {pad(total)}</span>
+        <span class="dots">
+          {data.disciplines.map((d) => <span class="dot" data-d={d} title={DISCIPLINES[d].label} />)}
+        </span>
+        <span>{data.disciplines.map((d) => DISCIPLINES[d].label).join(' + ')}</span>
+      </p>
+      <h1>{data.title}</h1>
+      <p class="tagline">{data.tagline}</p>
+    </header>
+
+    {
+      data.cover && (
+        <div class="cover wrap">
+          <Image
+            src={data.cover}
+            alt={data.coverAlt}
+            widths={[640, 1000, 1600]}
+            sizes="(max-width: 1400px) 100vw, 1320px"
+            loading="eager"
+            class:list={[{ pixel: data.coverPixel }]}
+          />
+        </div>
+      )
+    }
+
+    <div class="body wrap">
+      <div class="prose">
+        <Content />
+      </div>
+
+      <aside class="panel" aria-label="Project facts">
+        <dl>
+          <div>
+            <dt class="label">Role</dt>
+            <dd>{data.role}</dd>
+          </div>
+          <div>
+            <dt class="label">Team</dt>
+            <dd>{data.team}</dd>
+          </div>
+          <div>
+            <dt class="label">Made for</dt>
+            <dd>{data.context}</dd>
+          </div>
+          <div>
+            <dt class="label">Year</dt>
+            <dd>{data.year}{data.status && ` · ${data.status}`}</dd>
+          </div>
+          <div>
+            <dt class="label">Built with</dt>
+            <dd>{data.stack.join(' · ')}</dd>
+          </div>
+        </dl>
+
+        {
+          data.share && (
+            <div class="panel-block">
+              <p class="label">My share</p>
+              <ShareBar {...data.share} />
+            </div>
+          )
+        }
+
+        {
+          data.stats.length > 0 && (
+            <ul class="stats">
+              {data.stats.map((s) => (
+                <li>
+                  <strong>{s.value}</strong>
+                  <span>{s.label}</span>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+
+        {
+          data.links.length > 0 && (
+            <ul class="panel-links">
+              {data.links.map((link) => (
+                <li>
+                  <a class="btn" href={link.href}>
+                    {link.label} <span aria-hidden="true">↗</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </aside>
+    </div>
+
+    {
+      Toy && (
+        <section class="try wrap" id="try">
+          <Toy />
+        </section>
+      )
+    }
+
+    {
+      data.gallery.length > 0 && (
+        <section class="gallery wrap" aria-label="Screenshots">
+          {data.gallery.map((shot) => (
+            <figure>
+              <Image
+                src={shot.src}
+                alt={shot.alt}
+                widths={[480, 800, 1200]}
+                sizes="(max-width: 760px) 100vw, 50vw"
+                class:list={[{ pixel: shot.pixel }]}
+              />
+            </figure>
+          ))}
+        </section>
+      )
+    }
+
+    {
+      data.credits && (
+        <section class="credits wrap" id="credits">
+          <h2 class="label">Who else built this</h2>
+          <p>{data.credits}</p>
+        </section>
+      )
+    }
+
+    <nav class="next wrap" aria-label="Next project">
+      <a href={url(`work/${next.id}`)} data-next-project>
+        <span class="label">Next</span>
+        <strong>{next.data.title}</strong>
+        <span class="next-tag">{next.data.tagline}</span>
+      </a>
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .top {
+    padding-top: clamp(1.5rem, 5vw, 4rem);
+  }
+
+  .crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem 0.7rem;
+    margin: 0 0 1rem;
+    max-width: none;
+  }
+
+  h1 {
+    font-size: clamp(3rem, 12vw, 11rem);
+    font-variation-settings: 'wdth' 75;
+    letter-spacing: -0.02em;
+    line-height: 0.84;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+
+  .tagline {
+    margin: clamp(1rem, 2.5vw, 2rem) 0 0;
+    font-size: clamp(1.25rem, 2.4vw, 2rem);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    max-width: 34ch;
+  }
+
+  .cover {
+    margin-top: clamp(1.5rem, 4vw, 3rem);
+  }
+
+  .cover :global(img) {
+    width: 100%;
+    height: auto;
+    max-height: 78vh;
+    object-fit: cover;
+    border: 1px solid var(--rule);
+  }
+
+  .body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 21rem);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: start;
+    margin-top: clamp(2rem, 5vw, 4.5rem);
+  }
+
+  .panel {
+    position: sticky;
+    top: calc(var(--header-h) + 1.25rem);
+    display: grid;
+    gap: 1.4rem;
+    padding-top: 1rem;
+    border-top: 3px solid var(--ink);
+  }
+
+  .panel dl {
+    display: grid;
+    gap: 0.9rem;
+    margin: 0;
+  }
+
+  .panel dd {
+    margin: 0.15rem 0 0;
+    line-height: 1.4;
+  }
+
+  .panel-block {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .panel-block p {
+    margin: 0;
+  }
+
+  .stats {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--rule);
+  }
+
+  .stats li {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, auto) 1fr;
+    gap: 0.75rem;
+    align-items: baseline;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .stats strong {
+    font-size: 1.5rem;
+    font-variation-settings: 'wdth' 78;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .stats span {
+    font-size: 0.86rem;
+    line-height: 1.3;
+    color: var(--ink-2);
+  }
+
+  .panel-links {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .panel-links .btn {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .try {
+    margin-top: clamp(1.5rem, 4vw, 3rem);
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: clamp(2rem, 5vw, 4rem);
+  }
+
+  .gallery figure {
+    margin: 0;
+    border: 1px solid var(--rule);
+    background: var(--paper-2);
+  }
+
+  .gallery :global(img) {
+    width: 100%;
+    height: auto;
+  }
+
+  .credits {
+    margin-top: clamp(2rem, 5vw, 4rem);
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .credits h2 {
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+    font-variation-settings: normal;
+  }
+
+  .credits p {
+    max-width: 78ch;
+  }
+
+  .next {
+    margin-top: clamp(3rem, 8vw, 6rem);
+  }
+
+  .next a {
+    display: grid;
+    gap: 0.3rem;
+    padding: clamp(1.25rem, 3vw, 2.5rem);
+    border: 1px solid var(--rule);
+    text-decoration: none;
+    transition:
+      background 0.2s,
+      color 0.2s;
+  }
+
+  .next a:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .next a:hover .label {
+    color: inherit;
+  }
+
+  .next strong {
+    font-size: clamp(2rem, 6vw, 4.5rem);
+    font-variation-settings: 'wdth' 75;
+    letter-spacing: -0.02em;
+    line-height: 0.95;
+    text-transform: uppercase;
+  }
+
+  .next-tag {
+    max-width: 60ch;
+    opacity: 0.8;
+  }
+
+  @media (max-width: 900px) {
+    .body {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .panel {
+      position: static;
+      order: -1;
+    }
+    .gallery {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
+
+<script>
+  import { flags } from '../../lib/state';
+
+  // Remember which projects have been opened; the guide uses this.
+  const slug = document.querySelector<HTMLElement>('[data-project]')?.dataset.project;
+  if (slug) flags.set(`seen-${slug}`);
+</script>

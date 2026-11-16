@@ -1,0 +1,73 @@
+---
+// "My share of the work" as a bar: my commits against the team's.
+interface Props {
+  mine: number;
+  total: number;
+  unit: string;
+  note?: string;
+  compact?: boolean;
+}
+const { mine, total, unit, note, compact = false } = Astro.props;
+const pct = Math.round((mine / total) * 100);
+---
+
+<div class:list={['share', { compact }]}>
+  <div class="share-top">
+    <span class="share-num">{mine}<small> of {total} {unit}</small></span>
+    <span class="label">{pct}% mine</span>
+  </div>
+  <div class="share-bar" role="img" aria-label={`${mine} of ${total} ${unit}, ${pct} percent`}>
+    <span style={`width:${pct}%`}></span>
+  </div>
+  {note && !compact && <p class="share-note">{note}</p>}
+</div>
+
+<style>
+  .share {
+    display: grid;
+    gap: 0.35rem;
+  }
+  .share-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .share-num {
+    font-weight: 800;
+    font-variation-settings: 'wdth' 78;
+    font-size: 1.6rem;
+    line-height: 1;
+  }
+  .share-num small {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .share-bar {
+    height: 0.6rem;
+    border: 1px solid var(--ink);
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent 0 3px,
+      color-mix(in srgb, var(--ink) 22%, transparent) 3px 4px
+    );
+  }
+  .share-bar span {
+    display: block;
+    height: 100%;
+    background: var(--ink);
+  }
+  .share-note {
+    margin: 0.2rem 0 0;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    color: var(--ink-2);
+  }
+  .compact .share-num {
+    font-size: 1.15rem;
+  }
+</style>

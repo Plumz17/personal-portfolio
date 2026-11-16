@@ -1,0 +1,277 @@
+---
+import { DISCIPLINES, DISCIPLINE_KEYS, url } from '../lib/site';
+import { profile } from '../data/profile';
+---
+
+<header class="site-header">
+  <div class="bar wrap">
+    <a class="brand" href={url('/')} aria-label={`${profile.shortName}, home`}>
+      <span class="brand-mark" aria-hidden="true"><i data-d="games"></i><i data-d="software"></i><i data-d="ai"></i></span>
+      <span class="brand-name">{profile.shortName}</span>
+    </a>
+
+    <div class="masks" role="group" aria-label="Show or hide a discipline">
+      {
+        DISCIPLINE_KEYS.map((d) => (
+          <button
+            type="button"
+            class="mask"
+            data-mask={d}
+            data-d={d}
+            aria-pressed="true"
+            title={`${DISCIPLINES[d].label}: press ${DISCIPLINES[d].key} to toggle`}
+          >
+            <span class="mask-dot" aria-hidden="true" />
+            <span class="mask-label">{DISCIPLINES[d].label}</span>
+            <kbd class="key" aria-hidden="true">{DISCIPLINES[d].key}</kbd>
+          </button>
+        ))
+      }
+    </div>
+
+    <nav class="nav" aria-label="Main">
+      <a href={url('/#work')}>Work</a>
+      <a href={url('/archive')}>Archive</a>
+      <a href={url('/#about')}>About</a>
+    </nav>
+
+    <div class="tools">
+      <button type="button" class="tool" data-open-terminal aria-label="Search projects">
+        <span>Search</span>
+        <kbd class="key" aria-hidden="true">/</kbd>
+      </button>
+      <button type="button" class="tool tool-theme" data-theme-toggle aria-label="Switch between day and dusk colours">
+        <span class="theme-icon" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem 1.25rem;
+    min-height: var(--header-h);
+    flex-wrap: wrap;
+    padding-block: 0.35rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-right: auto;
+    text-decoration: none;
+    font-weight: 800;
+    font-variation-settings: 'wdth' 78;
+    font-size: 1.15rem;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+
+  /* Three overlapping discs, the site's mark. */
+  .brand-mark {
+    display: inline-flex;
+    isolation: isolate;
+  }
+  .brand-mark i {
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 50%;
+    background: var(--d);
+    mix-blend-mode: var(--blend);
+  }
+  .brand-mark i + i {
+    margin-left: -0.3rem;
+  }
+
+  .masks {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .mask {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.25rem;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid var(--ink);
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+      opacity 0.15s,
+      border-color 0.15s;
+  }
+
+  .mask-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: var(--d);
+    border: 1.5px solid var(--d);
+    transition: background 0.15s;
+  }
+
+  .mask[aria-pressed='false'] {
+    border-style: dashed;
+    color: var(--ink-2);
+  }
+
+  .mask[aria-pressed='false'] .mask-dot {
+    background: transparent;
+  }
+
+  .mask[aria-pressed='false'] .mask-label {
+    text-decoration: line-through;
+  }
+
+  .mask:hover {
+    border-color: var(--d);
+  }
+
+  .nav {
+    display: flex;
+    gap: 1.1rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .nav a {
+    text-decoration: none;
+    padding-block: 0.5rem;
+  }
+
+  .nav a:hover {
+    text-decoration: underline;
+  }
+
+  .tools {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.25rem;
+    min-width: 2.25rem;
+    justify-content: center;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .tool-theme {
+    background: transparent;
+    color: var(--ink);
+  }
+
+  /* Half-filled disc: day on one side, dusk on the other. */
+  .theme-icon {
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+    transition: transform 0.3s;
+  }
+
+  :global([data-theme='dusk']) .theme-icon {
+    transform: rotate(180deg);
+  }
+
+  @media (max-width: 760px) {
+    .mask-label,
+    .mask .key,
+    .tool > span:not(.theme-icon) {
+      display: none;
+    }
+    .mask {
+      min-width: 2.5rem;
+      min-height: 2.5rem;
+      justify-content: center;
+    }
+    .tool {
+      min-height: 2.5rem;
+      min-width: 2.5rem;
+    }
+    .mask-dot {
+      width: 0.95rem;
+      height: 0.95rem;
+    }
+    .nav {
+      order: 5;
+      width: 100%;
+      gap: 1.25rem;
+      border-top: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+    }
+    .bar {
+      gap: 0.25rem 0.5rem;
+    }
+  }
+</style>
+
+<script>
+  import { activeMasks, flags, isOn, toggleMask, toggleTheme } from '../lib/state';
+  import type { Discipline } from '../lib/site';
+
+  /** Hide every [data-disc] element whose disciplines are all switched off. */
+  function applyMasks(): void {
+    const active = activeMasks();
+    document.querySelectorAll<HTMLElement>('[data-disc]').forEach((el) => {
+      const own = (el.dataset.disc ?? '').split(' ').filter(Boolean) as Discipline[];
+      el.toggleAttribute('data-masked', own.length > 0 && !own.some((d) => active.includes(d)));
+    });
+    document.querySelectorAll<HTMLButtonElement>('[data-mask]').forEach((btn) => {
+      btn.setAttribute('aria-pressed', String(isOn(btn.dataset.mask as Discipline)));
+    });
+    // Lists can show a note when the filter leaves them empty.
+    document.querySelectorAll<HTMLElement>('[data-filter-group]').forEach((group) => {
+      const any = group.querySelector('[data-disc]:not([data-masked])') !== null;
+      group.querySelector<HTMLElement>('[data-filter-empty]')?.toggleAttribute('hidden', any);
+    });
+    document.documentElement.dataset.masks = active.join(' ');
+    flags.setTransient('masks-off', active.length === 0);
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-mask]').forEach((btn) => {
+    btn.addEventListener('click', () => toggleMask(btn.dataset.mask as Discipline));
+  });
+  document.querySelector('[data-theme-toggle]')?.addEventListener('click', toggleTheme);
+  document.addEventListener('pf:masks', applyMasks);
+  applyMasks();
+
+  // Keys 1, 2, 3 toggle the masks, unless the visitor is typing somewhere.
+  const KEYS: Record<string, Discipline> = { '1': 'games', '2': 'software', '3': 'ai' };
+  document.addEventListener('keydown', (event) => {
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('input, textarea, select, [contenteditable], dialog[open], [data-keys]')) return;
+    const d = KEYS[event.key];
+    if (d) toggleMask(d);
+  });
+</script>

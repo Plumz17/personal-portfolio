@@ -1,0 +1,630 @@
+---
+// AI Image Detector: (1) how an upload becomes crops and votes, using the
+// service's real limits and voting rule, and (2) measured accuracy per test,
+// computed from the evaluation CSVs in the repository.
+
+interface Test {
+  name: string;
+  n: number;
+  correct: number;
+  detail: string;
+}
+
+const groups: { title: string; note: string; tests: Test[] }[] = [
+  {
+    title: 'Clean images',
+    note: '100 real, 100 AI',
+    tests: [{ name: 'Baseline', n: 200, correct: 192, detail: '93 of 100 AI images caught, 99 of 100 photos passed' }],
+  },
+  {
+    title: 'JPEG compression',
+    note: '100 real, 100 AI',
+    tests: [
+      { name: 'Quality 95', n: 200, correct: 155, detail: '88 AI caught, 67 photos passed' },
+      { name: 'Quality 75', n: 200, correct: 105, detail: '36 AI caught, 69 photos passed' },
+      { name: 'Quality 50', n: 200, correct: 100, detail: '10 AI caught, 90 photos passed' },
+    ],
+  },
+  {
+    title: 'Resized',
+    note: '100 real, 100 AI',
+    tests: [
+      { name: 'To 75%', n: 200, correct: 181, detail: '81 AI caught, 100 photos passed' },
+      { name: 'To 50%', n: 200, correct: 172, detail: '72 AI caught, 100 photos passed' },
+      { name: 'To 25%', n: 200, correct: 108, detail: '12 AI caught, 96 photos passed' },
+    ],
+  },
+  {
+    title: 'Centre-cropped',
+    note: '100 real, 100 AI',
+    tests: [
+      { name: 'Keep 75%', n: 200, correct: 173, detail: '73 AI caught, 100 photos passed' },
+      { name: 'Keep 50%', n: 200, correct: 146, detail: '46 AI caught, 100 photos passed' },
+      { name: 'Keep 25%', n: 200, correct: 93, detail: '14 AI caught, 79 photos passed' },
+    ],
+  },
+  {
+    title: 'Other generators',
+    note: 'AI images only',
+    tests: [
+      { name: 'DALL-E 2', n: 100, correct: 100, detail: '100 of 100 caught' },
+      { name: 'BigGAN', n: 100, correct: 91, detail: '91 of 100 caught' },
+      { name: 'GLIDE', n: 100, correct: 89, detail: '89 of 100 caught' },
+      { name: 'VQDM', n: 100, correct: 80, detail: '80 of 100 caught' },
+    ],
+  },
+  {
+    title: 'In the wild',
+    note: 'small hand-collected sets',
+    tests: [
+      { name: 'Sent through a chat app', n: 40, correct: 31, detail: '18 of 20 AI caught, 13 of 20 photos passed' },
+      { name: 'AI art', n: 140, correct: 82, detail: '82 of 140 caught' },
+      { name: 'AI-enhanced real photos', n: 20, correct: 7, detail: '13 of 20 real photos called fake' },
+    ],
+  },
+];
+const pct = (t: Test) => (t.correct / t.n) * 100;
+---
+
+<div class="toy vote" data-vote>
+  <div class="toy-head">
+    <strong>From upload to verdict</strong>
+    <span class="label">Click a crop to flip its vote</span>
+  </div>
+
+  <div class="vote-grid">
+    <div class="vote-controls">
+      <div class="field">
+        <div class="field-row">
+          <label for="cv-w">Width</label>
+          <output data-o="w">2400 px</output>
+        </div>
+        <input id="cv-w" type="range" min="32" max="8000" step="4" value="2400" data-dim="w" />
+      </div>
+      <div class="field">
+        <div class="field-row">
+          <label for="cv-h">Height</label>
+          <output data-o="h">900 px</output>
+        </div>
+        <input id="cv-h" type="range" min="32" max="8000" step="4" value="900" data-dim="h" />
+      </div>
+      <div class="presets">
+        <button type="button" class="btn" data-preset="1024,1024">Square</button>
+        <button type="button" class="btn" data-preset="3000,4000">Phone photo</button>
+        <button type="button" class="btn" data-preset="4000,1000">Panorama</button>
+        <button type="button" class="btn" data-preset="6000,600">Banner</button>
+        <button type="button" class="btn" data-preset="48,48">Icon</button>
+      </div>
+    </div>
+
+    <div class="vote-view">
+      <div class="frame-wrap">
+        <div class="frame" data-frame></div>
+      </div>
+      <p class="formula label" data-formula></p>
+      <dl class="verdicts">
+        <div>
+          <dt class="label">This service</dt>
+          <dd data-verdict="ours"></dd>
+        </div>
+        <div>
+          <dt class="label">Original script</dt>
+          <dd data-verdict="theirs"></dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<div class="toy chart">
+  <div class="toy-head">
+    <strong>Where the model holds, and where it does not</strong>
+    <span class="label">Share of images classified correctly</span>
+  </div>
+  <div class="chart-body">
+    {
+      groups.map((group) => (
+        <section class="chart-group">
+          <h3>
+            {group.title} <span class="label">{group.note}</span>
+          </h3>
+          <ul>
+            {group.tests.map((t) => (
+              <li tabindex="0" data-tip={`${t.detail}. ${t.correct} of ${t.n} correct.`}>
+                <span class="c-name">{t.name}</span>
+                <span class="c-track" style={`--p:${(pct(t) / 100).toFixed(4)}`}>
+                  <span class="c-bar" />
+                  <span class="c-val">{pct(t).toFixed(pct(t) % 1 ? 1 : 0)}%</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+    <p class="chart-axis label" aria-hidden="true"><span>0</span><span>50%</span><span>100%</span></p>
+    <p class="chart-key label">The vertical line marks 50%: a coin flip on the balanced sets.</p>
+  </div>
+  <details class="chart-table">
+    <summary class="label">Show as a table</summary>
+    <table>
+      <thead>
+        <tr><th>Test</th><th>Images</th><th>Correct</th><th>Share</th><th>Breakdown</th></tr>
+      </thead>
+      <tbody>
+        {
+          groups.flatMap((g) =>
+            g.tests.map((t) => (
+              <tr>
+                <td>{g.title}: {t.name}</td>
+                <td>{t.n}</td>
+                <td>{t.correct}</td>
+                <td>{pct(t).toFixed(1)}%</td>
+                <td>{t.detail}</td>
+              </tr>
+            )),
+          )
+        }
+      </tbody>
+    </table>
+  </details>
+  <div class="toy-note">
+    <p>
+      Every image was sent to the API five times and scored by majority. Figures are computed from the result files in
+      the repository's <code>evaluation/results</code> folder.
+    </p>
+  </div>
+  <div class="tip" data-tip-box role="tooltip" hidden></div>
+</div>
+
+<style>
+  .vote-grid {
+    display: grid;
+    grid-template-columns: minmax(13rem, 17rem) minmax(0, 1fr);
+  }
+
+  .vote-controls {
+    display: grid;
+    align-content: start;
+    gap: 0.9rem;
+    padding: 0.9rem;
+    border-right: 1px solid var(--rule);
+  }
+
+  .vote-controls label {
+    font-weight: 700;
+  }
+
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .presets .btn {
+    min-height: 2.5rem;
+    padding-inline: 0.7rem;
+    font-size: 0.72rem;
+  }
+
+  .vote-view {
+    display: grid;
+    gap: 0.8rem;
+    padding: 0.9rem;
+    min-width: 0;
+  }
+
+  .frame-wrap {
+    display: grid;
+    place-items: center;
+    min-height: 13rem;
+    padding: 0.5rem;
+    background: var(--paper-2);
+  }
+
+  /* The uploaded image, to scale. Crops are positioned inside it. */
+  .frame {
+    position: relative;
+    border: 1px solid var(--ink);
+    background: repeating-linear-gradient(
+      45deg,
+      transparent 0 6px,
+      color-mix(in srgb, var(--ink) 10%, transparent) 6px 7px
+    );
+  }
+
+  .frame :global(.crop) {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 2px solid var(--ink);
+    background: color-mix(in srgb, var(--paper) 70%, transparent);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    mix-blend-mode: normal;
+  }
+
+  .frame :global(.crop[aria-pressed='true']) {
+    background: color-mix(in srgb, var(--ink) 88%, transparent);
+    color: var(--paper);
+  }
+
+  .frame :global(.reject) {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-align: center;
+  }
+
+  .formula {
+    margin: 0;
+    max-width: none;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.8rem;
+  }
+
+  .verdicts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin: 0;
+    border: 1px solid var(--rule);
+  }
+
+  .verdicts div {
+    padding: 0.6rem 0.7rem;
+  }
+
+  .verdicts div + div {
+    border-left: 1px solid var(--rule);
+  }
+
+  .verdicts dd {
+    margin: 0.2rem 0 0;
+    font-size: 0.95rem;
+    line-height: 1.35;
+  }
+
+  .verdicts :global(strong) {
+    display: block;
+    font-size: 1.7rem;
+    font-variation-settings: 'wdth' 78;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .verdicts :global(.differs) {
+    color: var(--games-ink);
+  }
+
+  /* ---- Chart: a meter list, one hue, values at the bar tips ---- */
+  .chart {
+    position: relative;
+    margin-top: 0.75rem;
+  }
+
+  .chart-body {
+    padding: 0.5rem 0.9rem 0.9rem;
+  }
+
+  .chart-group h3 {
+    margin: 1rem 0 0.3rem;
+    font-size: 1rem;
+    font-variation-settings: 'wdth' 90;
+    letter-spacing: 0;
+    line-height: 1.3;
+  }
+
+  .chart-group ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .chart-group li {
+    display: grid;
+    grid-template-columns: minmax(7rem, 13rem) minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.28rem 0;
+    cursor: default;
+  }
+
+  .c-name {
+    font-size: 0.9rem;
+    line-height: 1.2;
+  }
+
+  /* The plot area stops short of the row so every value fits at its bar's tip. */
+  .c-track {
+    --plot: calc(100% - 3.8rem);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    height: 14px;
+    border-left: 1px solid var(--ink);
+  }
+
+  /* 50% reference, drawn over the bars so it stays visible. */
+  .c-track::after {
+    content: '';
+    position: absolute;
+    left: calc(var(--plot) * 0.5);
+    top: -4px;
+    bottom: -4px;
+    width: 1px;
+    background: var(--ink);
+    opacity: 0.55;
+  }
+
+  .c-bar {
+    flex: none;
+    width: calc(var(--plot) * var(--p));
+    height: 100%;
+    background: var(--ai);
+    border-radius: 0 4px 4px 0;
+    transition: filter 0.15s;
+  }
+
+  .chart-group li:hover .c-bar,
+  .chart-group li:focus-visible .c-bar {
+    filter: brightness(1.25);
+  }
+
+  .c-val {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    position: relative;
+    z-index: 1;
+    padding-inline: 2px;
+    background: var(--paper);
+  }
+
+  .chart-axis {
+    display: grid;
+    grid-template-columns: minmax(7rem, 13rem) minmax(0, 1fr);
+    gap: 0.75rem;
+    margin: 0.6rem 0 0;
+    max-width: none;
+  }
+
+  .chart-axis span {
+    grid-column: 2;
+    grid-row: 1;
+    width: calc(100% - 3.8rem);
+  }
+
+  .chart-axis span:nth-child(2) {
+    text-align: center;
+  }
+
+  .chart-axis span:nth-child(3) {
+    text-align: right;
+  }
+
+  .chart-key {
+    margin: 0.3rem 0 0;
+    max-width: none;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.8rem;
+  }
+
+  .chart-table {
+    padding: 0 0.9rem 0.6rem;
+  }
+
+  .chart-table summary {
+    cursor: pointer;
+    padding-block: 0.5rem;
+  }
+
+  .chart-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  .chart-table th,
+  .chart-table td {
+    padding: 0.35rem 0.6rem 0.35rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .chart-table {
+    overflow-x: auto;
+  }
+
+  .tip {
+    position: absolute;
+    z-index: 5;
+    max-width: 18rem;
+    padding: 0.45rem 0.6rem;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 0.82rem;
+    line-height: 1.35;
+    pointer-events: none;
+  }
+
+  @media (max-width: 760px) {
+    .vote-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .vote-controls {
+      border-right: 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    .chart-group li,
+    .chart-axis {
+      grid-template-columns: minmax(5.5rem, 7.5rem) minmax(0, 1fr);
+      gap: 0.5rem;
+    }
+    .chart-axis span:nth-child(2) {
+      visibility: hidden;
+    }
+    .verdicts {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .verdicts div + div {
+      border-left: 0;
+      border-top: 1px solid var(--rule);
+    }
+  }
+</style>
+
+<script>
+  // Limits from backend/app/config.py.
+  const MIN_SIDE = 64;
+  const MAX_PIXELS = 25_000_000;
+  const MAX_CROPS = 8;
+
+  document.querySelectorAll<HTMLElement>('[data-vote]').forEach((root) => {
+    const frame = root.querySelector<HTMLElement>('[data-frame]')!;
+    const formula = root.querySelector<HTMLElement>('[data-formula]')!;
+    const ours = root.querySelector<HTMLElement>('[data-verdict="ours"]')!;
+    const theirs = root.querySelector<HTMLElement>('[data-verdict="theirs"]')!;
+    const sliders = {
+      w: root.querySelector<HTMLInputElement>('[data-dim="w"]')!,
+      h: root.querySelector<HTMLInputElement>('[data-dim="h"]')!,
+    };
+    let votes: boolean[] = [];
+
+    function verdictHtml(label: string, text: string, differs = false): string {
+      return `<strong class="${differs ? 'differs' : ''}">${label}</strong>${text}`;
+    }
+
+    function updateVerdict(): void {
+      const n = votes.length;
+      const fake = votes.filter(Boolean).length;
+      const ratio = fake / n;
+      // pipeline.py: strict majority; an exact tie goes to the mean SVM probability.
+      const mine = ratio > 0.5 ? 'fake' : ratio < 0.5 ? 'real' : 'tie';
+      // patchcraft_original.py: int(np.mean(preds)), so anything below 1.0 truncates to 0.
+      const original = ratio === 0.5 ? 'tie' : Math.trunc(ratio) === 1 ? 'fake' : 'real';
+      const share = `${fake} of ${n} crops fake (${ratio.toFixed(2)})`;
+      ours.innerHTML = verdictHtml(
+        mine === 'tie' ? 'Tie' : mine,
+        mine === 'tie' ? `${share}. Settled by the mean SVM probability.` : `${share}. Strict majority.`,
+      );
+      theirs.innerHTML = verdictHtml(
+        original === 'tie' ? 'Tie' : original,
+        original === 'tie'
+          ? `${share}. Settled by the mean SVM probability.`
+          : `int(${ratio.toFixed(2)}) = ${Math.trunc(ratio)}`,
+        original !== mine,
+      );
+    }
+
+    function layout(): void {
+      const w = Number(sliders.w.value);
+      const h = Number(sliders.h.value);
+      root.querySelector('[data-o="w"]')!.textContent = `${w} px`;
+      root.querySelector('[data-o="h"]')!.textContent = `${h} px`;
+
+      // Draw the image to scale inside a 100% x 12rem box.
+      const boxW = frame.parentElement!.clientWidth - 16;
+      const boxH = 190;
+      const scale = Math.min(boxW / w, boxH / h);
+      frame.style.width = `${Math.max(6, w * scale)}px`;
+      frame.style.height = `${Math.max(6, h * scale)}px`;
+
+      // multiple_crop(): square crops of the short side, spread evenly along the long side.
+      const maxD = Math.max(w, h);
+      const minD = Math.min(w, h);
+      const n = Math.ceil(maxD / minD);
+      const offset = n === 1 ? 0 : (maxD - minD) / (n - 1);
+
+      let reject = '';
+      if (minD < MIN_SIDE) reject = `400 · Image is too small (shortest side must be at least ${MIN_SIDE} px).`;
+      else if (w * h > MAX_PIXELS) reject = '400 · Image has too many pixels.';
+      else if (n > MAX_CROPS) reject = '400 · Image shape is too long and thin.';
+
+      if (reject) {
+        frame.innerHTML = `<span class="reject">${reject}</span>`;
+        formula.textContent = 'Rejected during validation, before the model lock is taken.';
+        ours.innerHTML = verdictHtml('Rejected', 'No model time spent.');
+        theirs.innerHTML = verdictHtml('n/a', 'These limits are enforced by the service layer.');
+        votes = [];
+        return;
+      }
+
+      if (votes.length !== n) votes = Array.from({ length: n }, (_, i) => i % 3 !== 2);
+      frame.replaceChildren(
+        ...votes.map((isFake, i) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'crop';
+          btn.setAttribute('aria-pressed', String(isFake));
+          btn.setAttribute('aria-label', `Crop ${i + 1}: ${isFake ? 'fake' : 'real'}. Activate to flip.`);
+          btn.textContent = n <= 6 ? (isFake ? 'fake' : 'real') : isFake ? 'F' : 'R';
+          const pos = Math.trunc(i * offset) * scale;
+          const size = minD * scale;
+          Object.assign(btn.style, {
+            width: `${size}px`,
+            height: `${size}px`,
+            left: w > h ? `${pos}px` : '0',
+            top: w > h ? '0' : `${pos}px`,
+          });
+          btn.addEventListener('click', () => {
+            votes[i] = !votes[i];
+            layout();
+          });
+          return btn;
+        }),
+      );
+      formula.textContent = `n = ceil(${maxD} / ${minD}) = ${n} crop${n > 1 ? 's' : ''} of ${minD} × ${minD} px${
+        n > 1 ? `, stepping ${offset.toFixed(0)} px so neighbours overlap` : ''
+      }.`;
+      updateVerdict();
+    }
+
+    Object.values(sliders).forEach((slider) => slider.addEventListener('input', layout));
+    root.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const [w, h] = (btn.dataset.preset ?? '').split(',');
+        sliders.w.value = w ?? '1024';
+        sliders.h.value = h ?? '1024';
+        votes = [];
+        layout();
+      });
+    });
+    new ResizeObserver(layout).observe(frame.parentElement!);
+    layout();
+  });
+
+  // One tooltip for the chart, shown on hover and on keyboard focus.
+  document.querySelectorAll<HTMLElement>('.chart').forEach((chart) => {
+    const tip = chart.querySelector<HTMLElement>('[data-tip-box]');
+    if (!tip) return;
+    const show = (row: HTMLElement) => {
+      tip.textContent = row.dataset.tip ?? '';
+      tip.hidden = false;
+      const box = chart.getBoundingClientRect();
+      const r = row.getBoundingClientRect();
+      tip.style.left = `${Math.max(8, Math.min(box.width - tip.offsetWidth - 8, r.left - box.left + r.width * 0.35))}px`;
+      tip.style.top = `${r.bottom - box.top + 4}px`;
+    };
+    chart.querySelectorAll<HTMLElement>('[data-tip]').forEach((row) => {
+      row.addEventListener('pointerenter', () => show(row));
+      row.addEventListener('focus', () => show(row));
+      row.addEventListener('pointerleave', () => (tip.hidden = true));
+      row.addEventListener('blur', () => (tip.hidden = true));
+    });
+  });
+</script>

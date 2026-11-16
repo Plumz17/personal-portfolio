@@ -1,0 +1,25 @@
+# Source material for research only. Never commit: these are full game
+# projects, some from private team repos. Assets the site needs are copied
+# individually into the site's own asset folder.
+/references/
+
+# Dependencies and build output
+node_modules/
+dist/
+.astro/
+
+# Local environment and editor files
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+
+# Documents containing personal data (phone number, candidate IDs).
+# The facts from these appear on the site; the files stay local.
+/Old Curriculum Vitae*.pdf
+/AWS Certified AI Practitioner*.pdf
+
+# Local working notes for the build; not part of the site.
+/CLAUDE.md
+/links.md

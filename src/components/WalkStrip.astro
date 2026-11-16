@@ -1,0 +1,592 @@
+---
+// A walkable hallway from Truths Astray. The characters, foreground props,
+// and wall map are the game's own sprites. The room is
+// redrawn on canvas in the game's palette, because in the game it is a 3D
+// voxel scene with no flat background to reuse. Doors are real links, so the
+// strip is optional: everything it reaches is also in the page below.
+import { media, url } from '../lib/site';
+
+const cast = (name: string) => media(`truths-astray/cast/${name}.png`);
+const prop = (name: string) => media(`truths-astray/props/${name}.png`);
+
+const doors = [
+  { x: 320, label: 'Selected work', href: '#work' },
+  { x: 840, label: 'More projects', href: '#more' },
+  { x: 1360, label: 'Leadership', href: '#leadership' },
+  { x: 1880, label: 'Everything', href: url('/archive') },
+  { x: 2400, label: 'About & contact', href: '#about' },
+];
+
+// Everyone in the hallway can be talked to. Dorothy is the site guide; the
+// others each have one conversation in src/content/dialogue/<Name>.md.
+const cast_ = [
+  { name: 'Dorothy', x: 590 },
+  { name: 'Sarah', x: 1100 },
+  { name: 'Wei', x: 1540 },
+  { name: 'Krishna', x: 2140 },
+  { name: 'Jenny', x: 2610 },
+];
+
+const config = {
+  width: 2720,
+  doors: doors.map((door) => door.x),
+  astara: {
+    idle: { src: cast('astara_idle'), frames: 6, fps: 5, w: 180, h: 180 },
+    walk: { src: cast('astara_walk'), frames: 8, fps: 10, w: 180, h: 180 },
+  },
+  // Idle sheets are 6 frames of 180x200 at 8 fps, as in the game's SpriteFrames.
+  npcs: cast_.map((npc) => ({ ...npc, src: cast(`${npc.name.toLowerCase()}_idle`) })),
+  map: { src: prop('map'), x: 1650, w: 140, h: 98 },
+  fans: { src: prop('kipas'), xs: [1100, 2140] },
+  // Silhouettes drawn in front of everything and scrolled faster, as the game does.
+  foreground: [
+    { src: prop('boxes_left'), x: 20 },
+    { src: prop('plant'), x: 1120 },
+    { src: prop('lamp'), x: 2020 },
+    { src: prop('table'), x: 2950 },
+    { src: prop('boxes_right'), x: 3560 },
+  ],
+};
+---
+
+<section class="strip" data-strip data-config={JSON.stringify(config)} aria-label="Walk through the Truths Astray hallway">
+  <div
+    class="stage"
+    data-stage
+    tabindex="0"
+    role="group"
+    aria-label="Walkable scene. Arrow keys walk, E opens the nearest door or talks to the nearest person."
+    data-keys
+  >
+    <canvas class="pixel" data-canvas></canvas>
+    <div class="signs">
+      {
+        doors.map((door) => (
+          <a class="sign" href={door.href} data-sign data-x={door.x}>
+            <span>{door.label}</span>
+            <kbd class="key" aria-hidden="true">E</kbd>
+          </a>
+        ))
+      }
+      {
+        cast_.map((npc) => (
+          <button type="button" class="sign talk" data-sign data-talk={npc.name} data-x={npc.x}>
+            <span>Talk to {npc.name}</span>
+            <kbd class="key" aria-hidden="true">E</kbd>
+          </button>
+        ))
+      }
+    </div>
+    <div class="pad">
+      <button type="button" data-walk="-1" aria-label="Walk left">◀</button>
+      <button type="button" data-walk="1" aria-label="Walk right">▶</button>
+    </div>
+  </div>
+  <p class="caption wrap">
+    <span class="label">Astara and the newsroom, from Truths Astray</span>
+    <span>Arrow keys, the buttons, or tap where you want them to go. The doors are links, and everyone in the hall will talk.</span>
+  </p>
+</section>
+
+<style>
+  .strip {
+    margin-top: clamp(2rem, 5vw, 4rem);
+  }
+
+  .stage {
+    --scale: 2;
+    position: relative;
+    overflow: hidden;
+    border-block: 1px solid var(--rule);
+    background: #030404;
+    cursor: pointer;
+    touch-action: pan-y;
+  }
+
+  .stage:focus-visible {
+    outline-offset: -4px;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+  }
+
+  .signs {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* A door plate: its bottom edge sits just above the door frame at any scale. */
+  .sign {
+    position: absolute;
+    left: 0;
+    top: calc(var(--scale) * 52px);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.55rem;
+    translate: -50% -100%;
+    border: 2px solid #1d1a14;
+    background: #f0e6c0;
+    color: #1d1a14;
+    box-shadow: 3px 3px 0 #05080c;
+    font-family: var(--font-pixel);
+    font-size: 0.95rem;
+    line-height: 1.3;
+    white-space: nowrap;
+    text-decoration: none;
+    pointer-events: auto;
+    cursor: pointer;
+    will-change: transform;
+  }
+
+  /* Dorothy's prompt hangs over her head rather than over a door. */
+  .sign.talk {
+    top: calc(var(--scale) * 66px);
+  }
+
+  .sign .key {
+    display: none;
+  }
+
+  .sign[data-near] {
+    background: #1d1a14;
+    color: #f0e6c0;
+    border-color: #f0e6c0;
+  }
+
+  .sign[data-near] .key {
+    display: inline-grid;
+  }
+
+  .sign:hover {
+    background: #fff8dc;
+    color: #1d1a14;
+    border-color: #1d1a14;
+  }
+
+  .pad {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0.5rem;
+    display: flex;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    padding-inline: 0.5rem;
+    pointer-events: none;
+  }
+
+  .pad button {
+    width: 3rem;
+    height: 3rem;
+    border: 2px solid #1d1a14;
+    background: #f0e6c0;
+    color: #1d1a14;
+    box-shadow: 3px 3px 0 #05080c;
+    font-size: 1rem;
+    cursor: pointer;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .pad button:active {
+    translate: 2px 2px;
+    box-shadow: 1px 1px 0 #05080c;
+  }
+
+  .caption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    align-items: baseline;
+    margin-top: 0.6rem;
+    max-width: none;
+    font-size: 0.9rem;
+    color: var(--ink-2);
+  }
+
+  @media (max-width: 40rem) {
+    .sign {
+      font-size: 0.85rem;
+      padding: 0.15rem 0.45rem;
+    }
+  }
+</style>
+
+<script>
+  import { reducedMotion, theme } from '../lib/state';
+
+  interface Sheet {
+    src: string;
+    frames: number;
+    fps: number;
+    w: number;
+    h: number;
+  }
+  interface Npc {
+    name: string;
+    x: number;
+    src: string;
+  }
+  interface Config {
+    width: number;
+    doors: number[];
+    astara: { idle: Sheet; walk: Sheet };
+    npcs: Npc[];
+    map: { src: string; x: number; w: number; h: number };
+    fans: { src: string; xs: number[] };
+    foreground: { src: string; x: number }[];
+  }
+
+  // Logical pixels. Sprites are drawn at native size; the canvas is scaled up whole.
+  const VIEW_H = 280;
+  const CEILING = 30;
+  const BAND_Y = 168; // where the wall changes from dark to slate
+  const FLOOR_Y = 240;
+  const DOOR_W = 84;
+  const DOOR_TOP = 62;
+  const NPC_FEET = 258;
+  const FEET_Y = 271;
+  const NPC = { w: 180, h: 200, frames: 6, fps: 8 };
+  const SPEED = 120;
+  const NEAR = 64;
+  const FOREGROUND_SPEED = 1.3;
+
+  // Sampled from the game's office and bedroom.
+  const DAY = {
+    ceiling: '#030404',
+    trim: '#17212c',
+    wall: '#0f1a26',
+    band: '#2f404e',
+    skirting: '#22303c',
+    floor: '#374b5d',
+    frame: '#767a80',
+    jamb: '#373e48',
+    room: '#554432',
+    roomFloor: '#8a7a5c',
+    light: '#f4f4f4',
+    lightFrame: '#343434',
+    glow: 'rgba(244, 244, 244, 0.07)',
+    spill: 'rgba(190, 180, 149, 0.16)',
+    ceilingLamp: '#f4f4f4',
+    ceilingLampGlow: 'rgba(244, 244, 244, 0.12)',
+  };
+  const DUSK = {
+    ...DAY,
+    wall: '#0a121b',
+    band: '#1c2833',
+    skirting: '#131c25',
+    floor: '#212e3a',
+    frame: '#4a4f57',
+    jamb: '#232830',
+    room: '#8f7c58',
+    roomFloor: '#beb495',
+    light: '#1a232d',
+    lightFrame: '#10161d',
+    glow: 'rgba(0, 0, 0, 0)',
+    spill: 'rgba(190, 180, 149, 0.34)',
+    ceilingLamp: '#2a323b',
+    ceilingLampGlow: 'rgba(0, 0, 0, 0)',
+  };
+
+  const load = (src: string): HTMLImageElement => Object.assign(new Image(), { src });
+
+  document.querySelectorAll<HTMLElement>('[data-strip]').forEach((root) => {
+    const config = JSON.parse(root.dataset.config ?? '{}') as Config;
+    const stage = root.querySelector<HTMLElement>('[data-stage]')!;
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-canvas]')!;
+    const ctx = canvas.getContext('2d')!;
+    const signs = [...root.querySelectorAll<HTMLElement>('[data-sign]')].map((el) => ({
+      el,
+      x: Number(el.dataset.x),
+    }));
+
+    const idle = load(config.astara.idle.src);
+    const walk = load(config.astara.walk.src);
+    const npcs = config.npcs.map((npc) => ({ ...npc, img: load(npc.src) }));
+    const map = load(config.map.src);
+    const fan = load(config.fans.src);
+    const foreground = config.foreground.map((item) => ({ ...item, img: load(item.src) }));
+    const worldW = config.width;
+
+    let scale = 2;
+    let viewW = 720;
+    let x = 150;
+    let facing = 1;
+    let held = 0; // -1, 0, 1 from keys or buttons
+    let target: number | null = null; // tap-to-walk destination
+    let clock = 0;
+    let last = 0;
+    let visible = true;
+    let near: (typeof signs)[number] | null = null;
+
+    function resize(): void {
+      const width = stage.clientWidth;
+      scale = width < 760 ? 1 : width < 2100 ? 2 : 3;
+      viewW = Math.ceil(width / scale);
+      canvas.width = viewW;
+      canvas.height = VIEW_H;
+      canvas.style.height = `${VIEW_H * scale}px`;
+      stage.style.setProperty('--scale', String(scale));
+      ctx.imageSmoothingEnabled = false;
+      draw();
+    }
+
+    // Follows Astara and stops at both ends, like the game's hallway camera.
+    function camera(): number {
+      return Math.max(0, Math.min(worldW - viewW, x - viewW / 2));
+    }
+
+    function drawRoom(cam: number, c: typeof DAY): void {
+      ctx.fillStyle = c.ceiling;
+      ctx.fillRect(0, 0, viewW, CEILING);
+      ctx.fillStyle = c.wall;
+      ctx.fillRect(0, CEILING, viewW, BAND_Y - CEILING);
+      ctx.fillStyle = c.trim;
+      ctx.fillRect(0, CEILING, viewW, 4);
+      ctx.fillStyle = c.band;
+      ctx.fillRect(0, BAND_Y, viewW, FLOOR_Y - BAND_Y);
+      ctx.fillStyle = c.floor;
+      ctx.fillRect(0, FLOOR_Y, viewW, VIEW_H - FLOOR_Y);
+      ctx.fillStyle = c.skirting;
+      ctx.fillRect(0, FLOOR_Y - 3, viewW, 3);
+
+      // Three light panels on the wall between each pair of doors, as in the office.
+      const bays = [0, ...config.doors, worldW];
+      for (let i = 0; i < bays.length - 1; i += 1) {
+        const from = bays[i]! + (i === 0 ? 20 : DOOR_W / 2 + 34);
+        const to = bays[i + 1]! - (i === bays.length - 2 ? 20 : DOOR_W / 2 + 34);
+        const gap = 12;
+        const w = Math.floor((to - from - gap * 2) / 3);
+        if (w < 40) continue;
+        for (let n = 0; n < 3; n += 1) {
+          const px = Math.round(from + n * (w + gap) - cam);
+          if (px > viewW || px + w < 0) continue;
+          ctx.fillStyle = c.glow;
+          ctx.fillRect(px - 8, 36, w + 16, 44);
+          ctx.fillRect(px - 4, 40, w + 8, 36);
+          ctx.fillStyle = c.lightFrame;
+          ctx.fillRect(px, 44, w, 28);
+          ctx.fillStyle = c.light;
+          ctx.fillRect(px + 3, 47, w - 6, 22);
+        }
+        // One recessed ceiling lamp per bay, like the one above each room in the game.
+        const lamp = Math.round((from + to) / 2 - cam);
+        ctx.fillStyle = c.ceilingLampGlow;
+        ctx.fillRect(lamp - 14, 13, 28, 6);
+        ctx.fillStyle = c.ceilingLamp;
+        ctx.fillRect(lamp - 10, 15, 20, 2);
+        ctx.fillRect(lamp - 7, 14, 14, 4);
+      }
+
+      // Doorways: frame, a jamb for depth, a warm room behind, light on the floor.
+      for (const door of config.doors) {
+        const left = Math.round(door - DOOR_W / 2 - cam);
+        if (left > viewW + 40 || left + DOOR_W < -40) continue;
+        ctx.fillStyle = c.frame;
+        ctx.fillRect(left - 7, DOOR_TOP - 7, DOOR_W + 14, FLOOR_Y - DOOR_TOP + 7);
+        ctx.fillStyle = c.room;
+        ctx.fillRect(left, DOOR_TOP, DOOR_W, FLOOR_Y - DOOR_TOP);
+        ctx.fillStyle = c.roomFloor;
+        ctx.fillRect(left, FLOOR_Y - 22, DOOR_W, 22);
+        ctx.fillStyle = c.jamb;
+        ctx.fillRect(left, DOOR_TOP, 9, FLOOR_Y - DOOR_TOP);
+        // Light from the room fans out across the floor, one pixel row at a time.
+        ctx.fillStyle = c.spill;
+        for (let row = 0; row < VIEW_H - FLOOR_Y; row += 1) {
+          ctx.fillRect(left + 9 - row, FLOOR_Y + row, DOOR_W - 9 + row * 2, 1);
+        }
+      }
+
+      // The Navaport district map, framed.
+      if (map.complete && map.naturalWidth) {
+        const mx = Math.round(config.map.x - cam);
+        if (mx < viewW && mx + config.map.w > 0) {
+          ctx.fillStyle = c.ceiling;
+          ctx.fillRect(mx - 3, 96, config.map.w + 6, config.map.h + 6);
+          ctx.drawImage(map, mx, 99);
+        }
+      }
+
+      if (fan.complete && fan.naturalWidth) {
+        for (const fx of config.fans.xs) {
+          const dx = Math.round(fx - fan.naturalWidth / 2 - cam);
+          if (dx < viewW && dx + fan.naturalWidth > 0) ctx.drawImage(fan, dx, CEILING - 6);
+        }
+      }
+    }
+
+    function drawSprite(
+      img: HTMLImageElement,
+      frame: number,
+      w: number,
+      h: number,
+      centre: number,
+      feet: number,
+      flip: boolean,
+    ): void {
+      if (!img.complete || !img.naturalWidth) return;
+      const dx = Math.round(centre - w / 2);
+      const dy = feet - h;
+      if (dx > viewW || dx + w < 0) return;
+      if (flip) {
+        ctx.save();
+        ctx.translate(dx + w, dy);
+        ctx.scale(-1, 1);
+        ctx.drawImage(img, frame * w, 0, w, h, 0, 0, w, h);
+        ctx.restore();
+      } else {
+        ctx.drawImage(img, frame * w, 0, w, h, dx, dy, w, h);
+      }
+    }
+
+    function draw(): void {
+      const cam = Math.round(camera());
+      const dusk = theme() === 'dusk';
+      const still = reducedMotion();
+      drawRoom(cam, dusk ? DUSK : DAY);
+
+      if (dusk) {
+        // Lights off: dim the room and let the doorways glow. This is part of
+        // the background, so the characters are drawn in front of the light.
+        ctx.fillStyle = 'rgba(4, 8, 16, 0.42)';
+        ctx.fillRect(0, 0, viewW, VIEW_H);
+        ctx.fillStyle = 'rgba(190, 180, 149, 0.5)';
+        for (const door of config.doors) {
+          const left = Math.round(door - DOOR_W / 2 - cam);
+          if (left < viewW && left + DOOR_W > 0) ctx.fillRect(left + 9, DOOR_TOP, DOOR_W - 9, FLOOR_Y - DOOR_TOP);
+        }
+        ctx.filter = 'brightness(0.72)';
+      }
+
+      // The cast stand by the wall and turn to face Astara.
+      for (const npc of npcs) {
+        const frame = still ? 0 : Math.floor(clock * NPC.fps) % NPC.frames;
+        drawSprite(npc.img, frame, NPC.w, NPC.h, npc.x - cam, NPC_FEET, x < npc.x);
+      }
+
+      const moving = held !== 0 || target !== null;
+      const sheet = moving ? config.astara.walk : config.astara.idle;
+      const frame = still && !moving ? 0 : Math.floor(clock * sheet.fps) % sheet.frames;
+      drawSprite(moving ? walk : idle, frame, sheet.w, sheet.h, x - cam, FEET_Y, facing < 0);
+      ctx.filter = 'none';
+
+      const front = Math.round(cam * FOREGROUND_SPEED);
+      for (const item of foreground) {
+        if (!item.img.complete || !item.img.naturalWidth) continue;
+        const dx = item.x - front;
+        if (dx < viewW && dx + item.img.naturalWidth > 0) {
+          ctx.drawImage(item.img, dx, VIEW_H - item.img.naturalHeight + 8);
+        }
+      }
+
+      near = null;
+      let best = NEAR;
+      for (const sign of signs) {
+        const sx = (sign.x - cam) * scale;
+        sign.el.style.transform = `translateX(${sx}px)`;
+        sign.el.style.visibility = sx > -140 && sx < viewW * scale + 140 ? 'visible' : 'hidden';
+        const distance = Math.abs(sign.x - x);
+        if (distance < best) {
+          best = distance;
+          near = sign;
+        }
+      }
+      for (const sign of signs) sign.el.toggleAttribute('data-near', sign === near);
+    }
+
+    function step(now: number): void {
+      const dt = Math.min(0.05, (now - last) / 1000 || 0);
+      last = now;
+      if (visible) {
+        clock += dt;
+        let dir = held;
+        if (dir === 0 && target !== null) {
+          if (Math.abs(target - x) < 2) target = null;
+          else dir = Math.sign(target - x);
+        }
+        if (dir !== 0) {
+          facing = dir;
+          x = Math.max(40, Math.min(worldW - 40, x + dir * SPEED * dt));
+        }
+        draw();
+      }
+      requestAnimationFrame(step);
+    }
+
+    function activate(): void {
+      near?.el.click();
+    }
+
+    // Dorothy's prompt opens the site guide as usual; anyone else starts
+    // their own conversation in the same dialogue box.
+    root.querySelectorAll<HTMLElement>('[data-talk]').forEach((el) =>
+      el.addEventListener('click', () => {
+        held = 0;
+        target = null;
+        const name = el.dataset.talk ?? '';
+        document.dispatchEvent(
+          name === 'Dorothy' ? new CustomEvent('pf:guide') : new CustomEvent('pf:talk', { detail: name }),
+        );
+      }),
+    );
+
+    // Keyboard, only while the stage has focus so the page still scrolls normally.
+    stage.addEventListener('keydown', (event) => {
+      const key = event.key.toLowerCase();
+      if (key === 'arrowleft' || key === 'a') held = -1;
+      else if (key === 'arrowright' || key === 'd') held = 1;
+      else if (key === 'e' || (key === 'enter' && event.target === stage)) activate();
+      else return;
+      target = null;
+      event.preventDefault();
+    });
+    stage.addEventListener('keyup', (event) => {
+      const key = event.key.toLowerCase();
+      if (['arrowleft', 'a', 'arrowright', 'd'].includes(key)) held = 0;
+    });
+    stage.addEventListener('blur', () => (held = 0));
+
+    // Hold-to-walk buttons.
+    root.querySelectorAll<HTMLButtonElement>('[data-walk]').forEach((btn) => {
+      const dir = Number(btn.dataset.walk);
+      const stop = () => (held = 0);
+      btn.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        btn.setPointerCapture(event.pointerId);
+        target = null;
+        held = dir;
+      });
+      btn.addEventListener('pointerup', stop);
+      btn.addEventListener('pointercancel', stop);
+      btn.addEventListener('keydown', (event) => {
+        if (event.key === ' ' || event.key === 'Enter') {
+          event.preventDefault();
+          held = dir;
+        }
+      });
+      btn.addEventListener('keyup', stop);
+      btn.addEventListener('blur', stop);
+    });
+
+    // Tap or click the scene to walk there.
+    canvas.addEventListener('click', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      target = camera() + (event.clientX - rect.left) / scale;
+      stage.focus({ preventScroll: true });
+    });
+
+    new IntersectionObserver(([entry]) => (visible = entry?.isIntersecting ?? true)).observe(stage);
+    new ResizeObserver(resize).observe(stage);
+    document.addEventListener('pf:theme', draw);
+    [idle, walk, map, fan, ...npcs.map((n) => n.img), ...foreground.map((f) => f.img)].forEach((img) =>
+      img.addEventListener('load', draw),
+    );
+    resize();
+    requestAnimationFrame(step);
+  });
+</script>

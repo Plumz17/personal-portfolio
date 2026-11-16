@@ -1,0 +1,369 @@
+---
+// 31 Days: a dialogue node's flags and what DialogueManager.StartDialogue does
+// with them, in the same order as the C# source.
+---
+
+<div class="toy node" data-node>
+  <div class="toy-head">
+    <strong>Dialogue node inspector</strong>
+    <span class="label">SingleChoiceNode.asset</span>
+  </div>
+
+  <div class="node-grid">
+    <form class="node-form" data-node-form>
+      <p class="label">Inspector</p>
+      <label class="row">
+        <span>characterName</span>
+        <select name="characterName">
+          <option>Bagas</option>
+          <option>Klara</option>
+          <option>Cass</option>
+        </select>
+      </label>
+      <label class="row check">
+        <span>levelUpFlag</span>
+        <input type="checkbox" name="levelUpFlag" checked />
+      </label>
+      <label class="row">
+        <span>advanceTimeFlag</span>
+        <input type="number" name="advanceTimeFlag" min="0" max="8" value="1" inputmode="numeric" />
+      </label>
+      <label class="row check">
+        <span>saveDataFlag</span>
+        <input type="checkbox" name="saveDataFlag" />
+      </label>
+      <label class="row">
+        <span>newMemberFlag</span>
+        <select name="newMemberFlag">
+          <option value="">None</option>
+          <option>Bagas</option>
+          <option>Klara</option>
+          <option>Cass</option>
+        </select>
+      </label>
+      <label class="row check">
+        <span>healFlag</span>
+        <input type="checkbox" name="healFlag" />
+      </label>
+      <label class="row">
+        <span>objectiveFlag</span>
+        <input type="text" name="objectiveFlag" placeholder="Find Klara in the library" maxlength="60" />
+      </label>
+      <div class="node-actions">
+        <button type="submit" class="btn">Play node</button>
+        <button type="button" class="btn" data-node-hit>Take a hit</button>
+        <button type="button" class="btn" data-node-reset>New game</button>
+      </div>
+    </form>
+
+    <div class="node-state">
+      <p class="label">Game state</p>
+      <div class="hud">
+        <div class="hud-day">
+          <span class="label">Day</span>
+          <strong data-s="day">1</strong>
+          <span class="label">of 31</span>
+        </div>
+        <ol class="blocks" data-s="blocks" aria-label="Time of day">
+          <li>Morning</li>
+          <li>Day</li>
+          <li>Evening</li>
+          <li>Night</li>
+        </ol>
+      </div>
+      <dl class="facts">
+        <div><dt class="label">Party</dt><dd data-s="party">Satria</dd></div>
+        <div><dt class="label">Party HP</dt><dd><span class="hp"><i data-s="hp"></i></span></dd></div>
+        <div><dt class="label">Connections</dt><dd data-s="links">Bagas 0 · Klara 0 · Cass 0</dd></div>
+        <div><dt class="label">Objective</dt><dd data-s="objective">None</dd></div>
+        <div><dt class="label">Last save</dt><dd data-s="save">Never</dd></div>
+      </dl>
+      <p class="label">Calls made by StartDialogue()</p>
+      <ol class="log" data-s="log" aria-live="polite">
+        <li class="muted">Play a node to see what it triggers.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="toy-note">
+    <p>
+      Flags fire in the order the code checks them: level up, time, save, party, heal, objective. So a node that saves
+      and adds a party member saves <em>before</em> the member joins. Tick both and watch the save line.
+    </p>
+  </div>
+</div>
+
+<style>
+  .node-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  }
+
+  .node-form,
+  .node-state {
+    display: grid;
+    align-content: start;
+    gap: 0.5rem;
+    padding: 0.9rem;
+    min-width: 0;
+  }
+
+  .node-form {
+    border-right: 1px solid var(--rule);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+
+  .node-form p,
+  .node-state p {
+    margin: 0;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 2.5rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  }
+
+  .row input[type='text'],
+  .row input[type='number'],
+  .row select {
+    width: 100%;
+    min-height: 2.1rem;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid color-mix(in srgb, var(--ink) 45%, transparent);
+    background: var(--paper-2);
+    color: var(--ink);
+    font: inherit;
+  }
+
+  .row input[type='checkbox'] {
+    width: 1.3rem;
+    height: 1.3rem;
+    accent-color: var(--ink);
+    justify-self: start;
+  }
+
+  .node-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+  }
+
+  .hud {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.7rem;
+    border: 1px solid var(--rule);
+  }
+
+  .hud-day {
+    display: grid;
+    justify-items: center;
+    line-height: 1;
+  }
+
+  .hud-day strong {
+    font-size: 3rem;
+    font-variation-settings: 'wdth' 75;
+    line-height: 0.9;
+  }
+
+  .blocks {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .blocks li {
+    padding: 0.5rem 0.2rem;
+    border: 1px solid var(--rule);
+    text-align: center;
+    color: var(--ink-2);
+    transition:
+      background 0.2s,
+      color 0.2s;
+  }
+
+  .blocks :global(li[data-now]) {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .facts {
+    display: grid;
+    gap: 0;
+    margin: 0;
+  }
+
+  .facts div {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  }
+
+  .facts dd {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .hp {
+    display: block;
+    height: 0.6rem;
+    border: 1px solid var(--ink);
+  }
+
+  .hp i {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: var(--ink);
+    transition: width 0.3s;
+  }
+
+  .log {
+    margin: 0;
+    padding: 0.6rem 0.7rem 0.6rem 2rem;
+    min-height: 7.5rem;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  .log :global(.muted) {
+    list-style: none;
+    margin-left: -1.2rem;
+    opacity: 0.6;
+  }
+
+  @media (max-width: 860px) {
+    .node-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .node-form {
+      border-right: 0;
+      border-bottom: 1px solid var(--rule);
+    }
+  }
+</style>
+
+<script>
+  const TIMES = ['Morning', 'Day', 'Evening', 'Night'];
+
+  document.querySelectorAll<HTMLElement>('[data-node]').forEach((root) => {
+    const form = root.querySelector<HTMLFormElement>('[data-node-form]')!;
+    const el = (name: string) => root.querySelector<HTMLElement>(`[data-s="${name}"]`)!;
+
+    const fresh = () => ({
+      day: 1,
+      block: 0,
+      party: ['Satria'],
+      hp: 100,
+      links: { Bagas: 0, Klara: 0, Cass: 0 } as Record<string, number>,
+      objective: '',
+      save: '',
+    });
+    let state = fresh();
+
+    function render(log?: string[]): void {
+      el('day').textContent = String(state.day);
+      [...el('blocks').children].forEach((li, i) => li.toggleAttribute('data-now', i === state.block));
+      el('party').textContent = state.party.join(', ');
+      el('hp').style.width = `${state.hp}%`;
+      el('links').textContent = Object.entries(state.links)
+        .map(([name, level]) => `${name} ${level}`)
+        .join(' · ');
+      el('objective').textContent = state.objective || 'None';
+      el('save').textContent = state.save || 'Never';
+      if (log) {
+        el('log').replaceChildren(
+          ...(log.length ? log : ['No flags set: the node only shows its text.']).map((line) => {
+            const li = document.createElement('li');
+            li.textContent = line;
+            if (!log.length) li.className = 'muted';
+            return li;
+          }),
+        );
+      }
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const data = new FormData(form);
+      const name = String(data.get('characterName'));
+      const advance = Math.max(0, Math.min(8, Number(data.get('advanceTimeFlag')) || 0));
+      const member = String(data.get('newMemberFlag'));
+      const objective = String(data.get('objectiveFlag')).trim();
+      const log: string[] = [];
+
+      // Same order as DialogueManager.StartDialogue.
+      if (data.get('levelUpFlag')) {
+        state.links[name] = (state.links[name] ?? 0) + 1;
+        log.push(`PlayerDataManager.IncreaseConnection("${name}")`);
+      }
+      if (advance !== 0) {
+        // CalenderAndObjectiveManager.AdvanceTimeBlock
+        const totalBlocks = state.block + advance;
+        const dayPassed = Math.floor(totalBlocks / 4);
+        state.block = totalBlocks % 4;
+        state.day += dayPassed;
+        log.push(
+          `AdvanceTimeBlock(${advance})  → ${TIMES[state.block]}${dayPassed ? `, +${dayPassed} day${dayPassed > 1 ? 's' : ''}` : ''}`,
+        );
+      }
+      if (data.get('saveDataFlag')) {
+        state.save = `Day ${state.day}, ${TIMES[state.block]} · party of ${state.party.length}`;
+        log.push('SaveData.Save()');
+      }
+      if (member) {
+        if (!state.party.includes(member)) state.party.push(member);
+        log.push(`PlayerDataManager.AddPartyMember(${member})`, 'DuskManager.UpdateParty()');
+      }
+      if (data.get('healFlag')) {
+        state.hp = 100;
+        log.push('DuskManager.HealParty()');
+      }
+      if (objective) {
+        state.objective = objective;
+        log.push('currentObjective = objectiveFlag', 'UpdateObjectiveUI()');
+      }
+      render(log);
+    });
+
+    root.querySelector('[data-node-hit]')?.addEventListener('click', () => {
+      state.hp = Math.max(10, state.hp - 30);
+      render();
+    });
+    root.querySelector('[data-node-reset]')?.addEventListener('click', () => {
+      state = fresh();
+      render([]);
+      el('log').replaceChildren(
+        Object.assign(document.createElement('li'), {
+          className: 'muted',
+          textContent: 'Play a node to see what it triggers.',
+        }),
+      );
+    });
+
+    render();
+  });
+</script>
