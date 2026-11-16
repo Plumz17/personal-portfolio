@@ -16,7 +16,7 @@ stats:
   - { value: '7', label: 'feature combinations compared' }
 links:
   - { label: Source on GitHub, href: 'https://github.com/Plumz17/PCD_FinalProject' }
-credits: Classifier training and evaluation by Evan Razzan Adytaputra. Flask front end by Indratanaya Budiman. Documentation with Daffa M. Siddiq.
+credits: Classifier training and evaluation, and the Flask front end, by teammates. Documentation was written together.
 ---
 
 ## The constraint

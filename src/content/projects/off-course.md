@@ -16,7 +16,7 @@ coverPixel: true
 links:
   - { label: Play on itch.io, href: 'https://avtne.itch.io/off-course' }
   - { label: Source on GitHub, href: 'https://github.com/avaxar/off-course' }
-credits: Programming by avtne and Troggz. Level design by Erenman and Troggz. Music by picardia.
+credits: Programming, level design and music by teammates.
 status: Released
 ---
 

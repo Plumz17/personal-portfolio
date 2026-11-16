@@ -29,7 +29,7 @@ toy: node-inspector
 links:
   - { label: Play on itch.io, href: 'https://plumz17.itch.io/31-days' }
   - { label: Source on GitHub, href: 'https://github.com/Plumz17/31-days' }
-credits: Music by Ajie Armansyah Sunaryo. Dialogue portraits by Evan Razzan Adytaputra. Playtesting by Dimas Stevano Ethanuel.
+credits: Music, dialogue portraits and playtesting by teammates.
 status: Playable prototype
 ---
 

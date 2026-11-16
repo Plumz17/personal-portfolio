@@ -13,7 +13,7 @@ share:
   mine: 51
   total: 169
   unit: commits
-  note: I wrote the player controller and nearly all menus and flow. The mask system and shaders are R. Ethan Halim's.
+  note: I wrote the player controller and nearly all menus and flow. The mask system and shaders are a teammate's.
 stats:
   - { value: '48 h', label: 'start to submission' }
   - { value: '189', label: 'of 263 lines in the player controller' }
@@ -31,7 +31,7 @@ toy: jump-lab
 links:
   - { label: Play on itch.io, href: 'https://avtne.itch.io/phase-reveal' }
   - { label: Source on GitHub, href: 'https://github.com/avtne/phase-reveal' }
-credits: Mask and platform system, shaders and colour-blind modes by R. Ethan Halim. Level design by Erenman and Troggz. Music and sound by picardia. Additional art by rtzg and Troggz.
+credits: The mask and platform system, shaders and colour-blind modes, level design, music and sound, and additional art are teammates' work.
 status: Released
 ---
 

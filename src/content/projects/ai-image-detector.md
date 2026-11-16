@@ -22,7 +22,7 @@ toy: crop-vote
 links:
   - { label: Live web app, href: 'https://ai-image-detector-web-seven.vercel.app' }
   - { label: Source on GitHub, href: 'https://github.com/Plumz17/ai-image-detector' }
-credits: The PatchCraft model and weights come from a thesis author and are used unmodified. Slim server (LiteRT and NumPy), model conversion and the mobile app by AkuTampanTay. About page by cliverosf1eld. UI design by Muhammad Keenan Basyir.
+credits: The PatchCraft model and weights come from a thesis author and are used unmodified. The slim server (LiteRT and NumPy), model conversion, mobile app, about page and UI design are teammates' work.
 status: Deployed
 ---
 

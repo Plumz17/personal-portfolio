@@ -13,7 +13,7 @@ share:
   mine: 167
   total: 314
   unit: commits
-  note: Most on the team. By lines of script I wrote about 1,350 of 4,600; the pinboard, typewriter and article systems are R. Ethan Halim's.
+  note: Most on the team. By lines of script I wrote about 1,350 of 4,600; the pinboard, typewriter and article systems are a teammate's.
 stats:
   - { value: '167', label: 'of 314 commits' }
   - { value: '23', label: 'dialogue files parsed' }
@@ -26,7 +26,7 @@ gallery:
   - { src: ../../assets/shots/truths-astray/bedroom.png, alt: Astara in the dormitory room on the first day. }
   - { src: ../../assets/shots/truths-astray/pinboard.png, alt: The pinboard with two articles pinned. }
 toy: dialogue-lab
-credits: Pinboard, typewriter, article snippets, shaders and most of the home-floor scene by R. Ethan Halim. Most story and article writing by A4R0NMan. Character portraits drawn with my sister.
+credits: The pinboard, typewriter, article snippets, shaders and most of the home-floor scene are a teammate's work, and most story and article writing is another's. Character portraits drawn with my sister.
 status: In development, not yet public
 ---
 

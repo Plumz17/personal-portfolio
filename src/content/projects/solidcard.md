@@ -13,7 +13,7 @@ share: { mine: 13, total: 21, unit: commits }
 links:
   - { label: Live app, href: 'https://plumz17.github.io/solid-cards/' }
   - { label: Source on GitHub, href: 'https://github.com/Plumz17/solid-cards' }
-credits: Solid authentication, pod reads and writes, deck cloning and image upload by my teammate Early.
+credits: Solid authentication, pod reads and writes, deck cloning and image upload by a teammate.
 status: Deployed
 ---
 

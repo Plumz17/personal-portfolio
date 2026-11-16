@@ -10,7 +10,7 @@ role: Data sources, ontology, query fixes
 team: Team of 4, extending an earlier group's system
 stack: [Python, Gemini, RDF, OWL, SPARQL, Virtuoso, Redis, Docker]
 share: { mine: 18, total: 54, unit: commits, note: The base pipeline was written by a previous group and its commits are included in the total. }
-credits: Original pipeline by a previous class group. Dashboard and statistics by Azhar Maulana. SPARQL demo interface and graph dump by Evan Razzan Adytaputra. Project management by Dhimas Early Oceandy.
+credits: Original pipeline by a previous class group. The dashboard and statistics, the SPARQL demo interface and graph dump, and project management are teammates' work.
 ---
 
 ## What it is

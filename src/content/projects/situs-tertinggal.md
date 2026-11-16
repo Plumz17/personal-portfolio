@@ -13,7 +13,7 @@ share:
   mine: 47
   total: 142
   unit: commits
-  note: I set up the shared foundation and built the menus. Wave spawning and the main game loop are Hazard-Nico's; room interactions are Qin's.
+  note: I set up the shared foundation and built the menus. Wave spawning, the main game loop and room interactions are teammates'.
 stats:
   - { value: '3', label: 'global systems written' }
   - { value: '9', label: 'menu and HUD scripts' }
@@ -24,7 +24,7 @@ toy: diagonal-menu
 links:
   - { label: Play on itch.io, href: 'https://plumz17.itch.io/situs-tertinggal' }
   - { label: Source on GitHub, href: 'https://github.com/Plumz17/CodelampProjectKelompok1' }
-credits: Wave system and main loop by Hazard-Nico. Room interactions, enemy variants and end screens by Qin. Game design by Ahmad Mujahid and Zaki Delfino Gunawan. Art shared with Nathania Joscelind.
+credits: The wave system and main loop, room interactions, enemy variants, end screens and game design are teammates' work. Art was shared with a teammate.
 status: Playable prototype
 ---
 
