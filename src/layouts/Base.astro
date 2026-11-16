@@ -18,6 +18,8 @@ interface Props {
   /** Page flags the guide reacts to, for example ["at-project", "at-31-days"]. */
   flags?: string[];
   image?: string;
+  /** The page has records the discipline masks can filter. */
+  filters?: boolean;
 }
 
 const {
@@ -25,6 +27,7 @@ const {
   description = `${profile.shortName}: game programmer and software engineer. Games, software and machine learning projects, with the code and the numbers behind them.`,
   flags = [],
   image,
+  filters = false,
 } = Astro.props;
 
 const pageTitle = title ? `${title} | ${profile.shortName}` : `${profile.shortName}, ${profile.role}`;
@@ -62,7 +65,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
-    <Header />
+    <Header filters={filters} />
     <main id="main">
       <slot />
     </main>

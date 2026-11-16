@@ -23,6 +23,8 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
     <button type="button" class="guide-close" data-guide-close aria-label="Close conversation">×</button>
     <div data-guide-view></div>
   </div>
+  <!-- A sign plate in Truths Astray's own UI: Dialogue Cream, 2px Dialogue
+       Ink border, the plate drop and Pixelify Sans. -->
   <button type="button" class="guide-launch" data-guide-launch aria-expanded="false">
     <canvas class="guide-face" width="80" height="80" aria-hidden="true"></canvas>
     <span class="guide-word">Talk</span>
@@ -82,14 +84,18 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
     font-family: var(--font-pixel);
     font-size: 1rem;
     cursor: pointer;
-    transition: transform 0.12s;
+    transition:
+      transform 0.12s,
+      box-shadow 0.12s;
   }
 
   .guide-launch:hover {
     transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 #1d1a14;
   }
 
-  .guide-launch:active {
+  .guide-launch:active,
+  .guide-launch[aria-expanded='true'] {
     transform: translate(2px, 2px);
     box-shadow: 1px 1px 0 #1d1a14;
   }
@@ -108,7 +114,8 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
     place-items: center;
     width: 1.3rem;
     height: 1.3rem;
-    background: var(--games);
+    /* Fixed Games Red Ink: white stays readable in day and dusk alike. */
+    background: #b72a12;
     color: #fff;
     font-weight: 600;
     border: 2px solid #1d1a14;
@@ -134,8 +141,8 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
   if (root && data) {
     const dialogues = JSON.parse(data.textContent ?? '[]') as Dialogue[];
     const panel = root.querySelector<HTMLElement>('[data-guide-panel]')!;
-    const launch = root.querySelector<HTMLButtonElement>('[data-guide-launch]')!;
-    const alert = root.querySelector<HTMLElement>('[data-guide-alert]')!;
+    const launch = document.querySelector<HTMLButtonElement>('[data-guide-launch]')!;
+    const alert = document.querySelector<HTMLElement>('[data-guide-alert]')!;
     const portraits = root.dataset.portraits ?? '';
 
     // Page flags come from the layout; "visitor" is always true.
@@ -214,10 +221,13 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
     }
 
     function refresh(): void {
-      root!.hidden = flags.has('guide-muted');
+      const muted = flags.has('guide-muted');
+      root!.hidden = muted;
+      launch.hidden = muted;
       const next = pick();
-      // The "!" marks something new: a one-time scene, or the masks all being off.
-      alert.hidden = !(next && (!next.repeatable || flags.has('masks-off')));
+      // The "!" asks for a first conversation and goes once Dorothy has been
+      // opened. The one exception: every mask off, when she has something new.
+      alert.hidden = !next || (flags.has('opened-guide') && !flags.has('masks-off'));
     }
 
     function open(chosen?: Dialogue): void {
@@ -227,6 +237,8 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
       pending.length = 0;
       panel.hidden = false;
       launch.setAttribute('aria-expanded', 'true');
+      // Opening Dorothy herself (not a hallway character) counts as meeting her.
+      if (!chosen) flags.set('opened-guide');
       alert.hidden = true;
       duck(true);
       runner.start(dialogue);
@@ -242,7 +254,7 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
       duck(false);
       launch.setAttribute('aria-expanded', 'false');
       refresh();
-      if (!root!.hidden) launch.focus({ preventScroll: true });
+      if (!launch.hidden) launch.focus({ preventScroll: true });
     }
 
     launch.addEventListener('click', () => (panel.hidden ? open() : close()));
@@ -266,7 +278,7 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
     });
 
     // The launcher shows Dorothy's face, cut from her neutral portrait.
-    const face = root.querySelector<HTMLCanvasElement>('.guide-face');
+    const face = launch.querySelector<HTMLCanvasElement>('.guide-face');
     const ctx = face?.getContext('2d');
     if (face && ctx && portraits) {
       const img = new Image();

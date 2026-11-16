@@ -2,7 +2,7 @@
 title: Phase Reveal
 tagline: A 48-hour puzzle platformer about colour masks that cancel each other out. Jury's choice at Global Game Jam Solo 2026.
 tier: flagship
-order: 3
+order: 4
 disciplines: [games]
 year: '2026'
 context: Global Game Jam 2026, Solo (Surakarta) site. Theme, Mask.
@@ -22,16 +22,18 @@ cover: ../../assets/shots/phase-reveal/shot-2.png
 coverAlt: Comic panels from the intro, a monkey holding a white mask.
 coverPixel: true
 gallery:
-  - { src: ../../assets/shots/phase-reveal/shot-1.png, alt: Phase Reveal gameplay screenshot., pixel: true }
-  - { src: ../../assets/shots/phase-reveal/shot-3.png, alt: Phase Reveal gameplay screenshot., pixel: true }
-  - { src: ../../assets/shots/phase-reveal/shot-4.png, alt: Phase Reveal gameplay screenshot., pixel: true }
-  - { src: ../../assets/shots/phase-reveal/shot-5.png, alt: Phase Reveal gameplay screenshot., pixel: true }
-  - { src: ../../assets/shots/ggj-solo-2026.png, alt: Award certificate naming Team ScuTI and Phase Reveal as jury's choice best game. }
+  - { src: ../../assets/shots/phase-reveal/shot-1.png, alt: 'Title screen with a slanted menu beside the half-masked monkey logo.', caption: 'The slanted title menu, laid out by the custom container.', beside: Custom layout containers, pixel: true }
+  - { src: ../../assets/shots/phase-reveal/shot-3.png, alt: 'A level of red, green and blue platforms with the three masks in the corner.', caption: 'Level 3. The three masks, top right, switch each colour plane on or off.', beside: What it is, pixel: true }
+  - { src: ../../assets/shots/phase-reveal/shot-4.png, alt: 'The monkey carrying a weight cube through a green plane.', caption: 'Carrying a weight cube in level 4.', beside: A controller that forgives, pixel: true }
+  - { src: ../../assets/shots/phase-reveal/shot-5.png, alt: 'Level 5, where a blue and a red platform overlap in the middle.', caption: 'Level 5. Where the blue and red platforms overlap, they cancel out.', beside: What it is, pixel: true }
+  - { src: ../../assets/shots/ggj-solo-2026.png, alt: 'Award certificate naming Team ScuTI and Phase Reveal as jury’s choice best game.', caption: 'The certificate from Global Game Jam Solo 2026.', beside: Outcome }
 links:
   - { label: Play on itch.io, href: 'https://avtne.itch.io/phase-reveal' }
   - { label: Source on GitHub, href: 'https://github.com/avtne/phase-reveal' }
 credits: The mask and platform system, shaders and colour-blind modes, level design, music and sound, and additional art are teammates' work.
 status: Released
+hook: A controller that forgives
+feature: pair
 ---
 
 ## What it is

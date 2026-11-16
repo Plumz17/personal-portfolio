@@ -1,8 +1,9 @@
 ---
 import { Image } from 'astro:assets';
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import ShareBar from '../../components/ShareBar.astro';
+import Shot from '../../components/Shot.astro';
 import { DISCIPLINES, url } from '../../lib/site';
 
 export async function getStaticPaths() {
@@ -13,17 +14,62 @@ export async function getStaticPaths() {
   );
   return ordered.map((entry, i) => ({
     params: { slug: entry.id },
-    props: { entry, next: ordered[(i + 1) % ordered.length]!, position: i + 1, total: ordered.length },
+    props: { entry, next: ordered[(i + 1) % ordered.length]! },
   }));
 }
 
-const { entry, next, position, total } = Astro.props;
+const { entry, next } = Astro.props;
 const { data } = entry;
-const { Content } = await render(entry);
 
 const flags = ['at-project', `at-${entry.id}`];
 if (data.credits) flags.push('has-credits');
-const pad = (n: number) => String(n).padStart(2, '0');
+
+// A stat that repeats the share bar ("167 of 314 commits") is dropped.
+const stats = data.stats.filter((s) => !(data.share && s.value.replace(/,/g, '') === String(data.share.mine)));
+
+// Split the write-up at its headings so each screenshot can sit beside the
+// section it illustrates. The first section is always a row of its own, so on
+// a phone the facts come straight after it. A section with screenshots is
+// also a row of its own, so on a phone they follow that section and nothing
+// else; on wide screens they run down beside the text after it. A heading with nothing under it (like "Engineering
+// notes") moves with the section that follows it.
+type Shot = (typeof data.gallery)[number];
+const slug = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
+    .trim()
+    .replace(/\s+/g, '-');
+const chunks = (entry.rendered?.html ?? '').split(/(?=<h[23][\s>])/).filter((c) => c.trim());
+const rows: { html: string; shots: Shot[] }[] = [];
+const placed = new Set<Shot>();
+let carry = '';
+let closed = false;
+for (const chunk of chunks) {
+  const id = chunk.match(/^<h[23][^>]*\bid="([^"]+)"/)?.[1];
+  if (id && !chunk.replace(/^<h[23][\s\S]*?<\/h[23]>/, '').trim()) {
+    carry += chunk;
+    continue;
+  }
+  const shots = data.gallery.filter((g) => g.beside && id && slug(g.beside) === id);
+  shots.forEach((s) => placed.add(s));
+  if (rows.length < 2 || shots.length || closed) rows.push({ html: '', shots });
+  rows.at(-1)!.html += carry + chunk;
+  carry = '';
+  closed = shots.length > 0;
+}
+if (!rows.length) rows.push({ html: '', shots: [] });
+rows.at(-1)!.html += carry;
+// Screenshots without a matching heading go beside the last section.
+const unplaced = data.gallery.filter((g) => !placed.has(g));
+rows.at(-1)!.shots.push(...unplaced);
+
+// On wide screens the facts run down beside every row that has no pictures.
+const firstPictured = rows.findIndex((r, i) => i > 0 && r.shots.length > 0);
+const panelSpan = firstPictured === -1 ? rows.length : firstPictured;
+
+// Long titles get a smaller headline so the first screen still shows the work.
+const titleLength = Math.max(data.title.length, 8);
 ---
 
 <Base title={data.title} description={data.tagline} flags={flags} image={data.cover?.src}>
@@ -32,13 +78,12 @@ const pad = (n: number) => String(n).padStart(2, '0');
       <p class="crumbs label">
         <a href={url('/#work')}>Work</a>
         <span aria-hidden="true">/</span>
-        <span>{data.tier === 'flagship' ? 'Case study' : 'Project'} {pad(position)} of {pad(total)}</span>
         <span class="dots">
           {data.disciplines.map((d) => <span class="dot" data-d={d} title={DISCIPLINES[d].label} />)}
         </span>
         <span>{data.disciplines.map((d) => DISCIPLINES[d].label).join(' + ')}</span>
       </p>
-      <h1>{data.title}</h1>
+      <h1 style={`--len: ${titleLength}`}>{data.title}</h1>
       <p class="tagline">{data.tagline}</p>
     </header>
 
@@ -58,89 +103,91 @@ const pad = (n: number) => String(n).padStart(2, '0');
     }
 
     <div class="body wrap">
-      <div class="prose">
-        <Content />
-      </div>
-
-      <aside class="panel" aria-label="Project facts">
-        <dl>
-          <div>
-            <dt class="label">Role</dt>
-            <dd>{data.role}</dd>
-          </div>
-          <div>
-            <dt class="label">Team</dt>
-            <dd>{data.team}</dd>
-          </div>
-          <div>
-            <dt class="label">Made for</dt>
-            <dd>{data.context}</dd>
-          </div>
-          <div>
-            <dt class="label">Year</dt>
-            <dd>{data.year}{data.status && `, ${data.status}`}</dd>
-          </div>
-          <div>
-            <dt class="label">Built with</dt>
-            <dd>{data.stack.join(', ')}</dd>
-          </div>
-        </dl>
-
-        {
-          data.share && (
-            <div class="panel-block">
-              <p class="label">My share</p>
-              <ShareBar {...data.share} />
+      {
+        rows.map((row, i) => (
+          <>
+            <div class:list={['prose', { cont: i > 0 }]} style={`--r: ${i + 1}`}>
+              <Fragment set:html={row.html} />
+              {i === 0 && row.shots.length > 0 && (
+                <div class:list={['inline-shots', { two: row.shots.length > 1 }]}>
+                  {row.shots.map((s) => (
+                    <Shot {...s} />
+                  ))}
+                </div>
+              )}
             </div>
-          )
-        }
 
-        {
-          data.stats.length > 0 && (
-            <ul class="stats">
-              {data.stats.map((s) => (
-                <li>
-                  <strong>{s.value}</strong>
-                  <span>{s.label}</span>
-                </li>
-              ))}
-            </ul>
-          )
-        }
+            {i === 0 ? (
+              <aside class="panel" aria-label="Project facts" style={`--span: ${panelSpan}`}>
+                <dl>
+                  <div>
+                    <dt class="label">Role</dt>
+                    <dd>{data.role}</dd>
+                  </div>
+                  <div>
+                    <dt class="label">Team</dt>
+                    <dd>{data.team}</dd>
+                  </div>
+                  <div>
+                    <dt class="label">Made for</dt>
+                    <dd>{data.context}</dd>
+                  </div>
+                  <div>
+                    <dt class="label">Year</dt>
+                    <dd>
+                      {data.year}
+                      {data.status && `, ${data.status}`}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="label">Built with</dt>
+                    <dd>{data.stack.join(', ')}</dd>
+                  </div>
+                </dl>
 
-        {
-          data.links.length > 0 && (
-            <ul class="panel-links">
-              {data.links.map((link) => (
-                <li>
-                  <a class="btn" href={link.href}>
-                    {link.label} <span aria-hidden="true">↗</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )
-        }
-      </aside>
+                {data.share && (
+                  <div class="panel-block">
+                    <p class="label">My share</p>
+                    <ShareBar {...data.share} />
+                  </div>
+                )}
+
+                {stats.length > 0 && (
+                  <ul class="stats">
+                    {stats.map((s) => (
+                      <li>
+                        <strong>{s.value}</strong>
+                        <span>{s.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {data.links.length > 0 && (
+                  <ul class="panel-links">
+                    {data.links.map((link) => (
+                      <li>
+                        <a class="btn" href={link.href}>
+                          {link.label} <span aria-hidden="true">↗</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </aside>
+            ) : (
+              row.shots.length > 0 && (
+                <div class:list={['side', { 'from-h3': row.html.startsWith('<h3') }]} style={`--r: ${i + 1}; --rs: ${rows[i + 1] && !rows[i + 1]!.shots.length ? 2 : 1}`}>
+                  {row.shots.map((s) => (
+                    <Shot {...s} />
+                  ))}
+                </div>
+              )
+            )}
+          </>
+        ))
+      }
     </div>
-
-    {
-      data.gallery.length > 0 && (
-        <section class="gallery wrap" aria-label="Screenshots">
-          {data.gallery.map((shot) => (
-            <figure>
-              <Image
-                src={shot.src}
-                alt={shot.alt}
-                widths={[480, 800, 1200]}
-                sizes="(max-width: 760px) 100vw, 50vw"
-                class:list={[{ pixel: shot.pixel }]}
-              />
-            </figure>
-          ))}
-        </section>
-      )
-    }
 
     {
       data.credits && (
@@ -151,12 +198,12 @@ const pad = (n: number) => String(n).padStart(2, '0');
       )
     }
 
-    <nav class="next wrap" aria-label="Next project">
-      <a href={url(`work/${next.id}`)} data-next-project>
-        <span class="label">Next</span>
-        <strong>{next.data.title}</strong>
+    <nav class="end wrap" aria-label="More work">
+      <a class="next" href={url(`work/${next.id}`)} data-next-project>
+        <strong><span class="next-word">Next:</span> {next.data.title}</strong>
         <span class="next-tag">{next.data.tagline}</span>
       </a>
+      <a class="all" href={url('/archive')}>Everything, filed by year</a>
     </nav>
   </article>
 </Base>
@@ -175,12 +222,15 @@ const pad = (n: number) => String(n).padStart(2, '0');
     max-width: none;
   }
 
+  /* Size follows title length: "Truths Astray" fills the width, a forty-
+     character title stays to two or three lines. */
   h1 {
-    font-size: clamp(3rem, 12vw, 11rem);
+    font-size: clamp(2.4rem, min(12vw, calc(190vw / var(--len))), 11rem);
     font-variation-settings: 'wdth' 75;
     letter-spacing: -0.02em;
-    line-height: 0.84;
+    line-height: 0.86;
     text-transform: uppercase;
+    text-wrap: balance;
     overflow-wrap: anywhere;
   }
 
@@ -204,17 +254,69 @@ const pad = (n: number) => String(n).padStart(2, '0');
     border: 1px solid var(--rule);
   }
 
+  /* The write-up at reading width; beside it, whatever illustrates each part.
+     Source order is the phone order: first section, facts, then the rest. */
   .body {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(16rem, 21rem);
-    gap: clamp(2rem, 6vw, 6rem);
+    grid-template-columns: minmax(0, 29.5em) minmax(16rem, 1fr);
+    /* No row gap: headings keep their own spacing, so the text reads as one
+       continuous column whether or not a row breaks at it. */
+    gap: 0 clamp(2rem, 6vw, 6rem);
     align-items: start;
     margin-top: clamp(2rem, 5vw, 4.5rem);
   }
 
+  .prose {
+    grid-column: 1;
+    grid-row: var(--r);
+  }
+
+  .side {
+    grid-column: 2;
+    grid-row: var(--r) / span var(--rs);
+  }
+
   .panel {
-    position: sticky;
-    top: calc(var(--header-h) + 1.25rem);
+    grid-column: 2;
+    grid-row: 1 / span var(--span);
+    max-width: 26rem;
+  }
+
+  /* A row that continues the write-up keeps the space above its heading. */
+  .prose.cont > :global(h2:first-child) {
+    margin-top: 2.2em;
+  }
+
+  /* About 68 characters a line in the body face. */
+  .prose :global(p),
+  .prose :global(ul) {
+    max-width: 29.5em;
+  }
+
+  .inline-shots {
+    display: grid;
+    gap: 1.25rem;
+    margin: 1.75rem 0 0.5rem;
+  }
+
+  .inline-shots.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .side {
+    display: grid;
+    gap: clamp(1.75rem, 3vw, 2.5rem);
+    /* Lines the first image up with the heading's cap height, not its box. */
+    /* Starts level with the heading beside it: its top margin, plus the gap
+       between a heading's box and its cap height. */
+    padding: calc(2.2 * clamp(1.6rem, 3.4vw, 2.5rem) + 0.45rem) 0 clamp(2rem, 4vw, 3rem);
+  }
+
+  .side.from-h3 {
+    padding-top: calc(1.8 * 1.25rem + 0.3rem);
+  }
+
+  .panel {
     display: grid;
     gap: 1.4rem;
     padding-top: 1rem;
@@ -285,26 +387,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
     justify-content: space-between;
   }
 
-  .gallery {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-    margin-top: clamp(2rem, 5vw, 4rem);
-  }
-
-  .gallery figure {
-    margin: 0;
-    border: 1px solid var(--rule);
-    background: var(--paper-2);
-  }
-
-  .gallery :global(img) {
-    width: 100%;
-    height: auto;
-  }
-
   .credits {
-    margin-top: clamp(2rem, 5vw, 4rem);
+    margin-top: clamp(2.5rem, 5vw, 4rem);
     padding-top: 1rem;
     border-top: 1px solid var(--rule);
   }
@@ -316,55 +400,85 @@ const pad = (n: number) => String(n).padStart(2, '0');
   }
 
   .credits p {
-    max-width: 78ch;
+    max-width: 29.5em;
+  }
+
+  /* The way on: a heavy rule, the next title as a headline, and the archive. */
+  .end {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.5rem clamp(2rem, 6vw, 6rem);
+    align-items: end;
+    margin-top: clamp(3.5rem, 9vw, 7rem);
+    padding-top: 1.1rem;
+    border-top: 3px solid var(--ink);
   }
 
   .next {
-    margin-top: clamp(3rem, 8vw, 6rem);
-  }
-
-  .next a {
     display: grid;
-    gap: 0.3rem;
-    padding: clamp(1.25rem, 3vw, 2.5rem);
-    border: 1px solid var(--rule);
+    gap: 0.6rem;
     text-decoration: none;
-    transition:
-      background 0.2s,
-      color 0.2s;
-  }
-
-  .next a:hover {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .next a:hover .label {
-    color: inherit;
   }
 
   .next strong {
     font-size: clamp(2rem, 6vw, 4.5rem);
     font-variation-settings: 'wdth' 75;
     letter-spacing: -0.02em;
-    line-height: 0.95;
+    line-height: 0.92;
     text-transform: uppercase;
+    text-wrap: balance;
+    text-decoration: underline;
+    text-decoration-thickness: 0.06em;
+    text-underline-offset: 0.12em;
+    text-decoration-color: transparent;
+    transition: text-decoration-color 0.2s;
+  }
+
+  .next:hover strong,
+  .next:focus-visible strong {
+    text-decoration-color: currentColor;
+  }
+
+  .next-word {
+    color: var(--ink-2);
   }
 
   .next-tag {
-    max-width: 60ch;
-    opacity: 0.8;
+    max-width: 29.5em;
+    color: var(--ink-2);
+  }
+
+  .all {
+    padding-bottom: 0.2rem;
+    white-space: nowrap;
+    text-underline-offset: 0.2em;
   }
 
   @media (max-width: 900px) {
     .body {
       grid-template-columns: minmax(0, 1fr);
     }
+    .prose,
+    .side,
     .panel {
-      position: static;
-      order: -1;
+      grid-column: auto;
+      grid-row: auto;
     }
-    .gallery {
+    .panel {
+      max-width: none;
+      margin-top: 2rem;
+    }
+    .side,
+    .side.from-h3 {
+      padding-top: 1.75rem;
+    }
+    .end {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .inline-shots.two {
       grid-template-columns: minmax(0, 1fr);
     }
   }

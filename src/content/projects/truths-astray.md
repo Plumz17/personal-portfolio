@@ -21,12 +21,17 @@ stats:
 cover: ../../assets/shots/truths-astray/dialogue.png
 coverAlt: Sarah speaking to Astara in the office, through the dialogue system.
 gallery:
-  - { src: ../../assets/shots/truths-astray/title.png, alt: Title screen with a terminal, typewriter and pinboard. }
-  - { src: ../../assets/shots/truths-astray/office.png, alt: Astara in the office next to the terminal and pinboard. }
-  - { src: ../../assets/shots/truths-astray/bedroom.png, alt: Astara in the dormitory room on the first day. }
-  - { src: ../../assets/shots/truths-astray/pinboard.png, alt: The pinboard with two articles pinned. }
+  - { src: ../../assets/shots/truths-astray/title.png, alt: 'Title screen with a terminal, typewriter and pinboard.', caption: 'The title screen: the terminal, typewriter and pinboard you work at each day.', beside: What it is }
+  - { src: ../../assets/shots/truths-astray/office.png, alt: 'Astara in the office next to the terminal and pinboard.', caption: 'Astara in the office. Her sprites and movement, and the furniture, are mine.', beside: What I built }
+  - { src: ../../assets/shots/truths-astray/bedroom.png, alt: 'Astara in the dormitory room on the first day.', caption: 'The dormitory on day one.', beside: What I built }
+  - { src: ../../assets/shots/truths-astray/pinboard.png, alt: 'The pinboard with two articles pinned.', caption: 'Two articles on the pinboard. The board itself is a teammate’s system.', beside: What it is }
 credits: The pinboard, typewriter, article snippets, shaders and most of the home-floor scene are a teammate's work, and most story and article writing is another's. Character portraits drawn with my sister.
 status: In development, not yet public
+hook: Writers never open the engine
+feature: lead
+excerpt:
+  source: vault/0d/Sarah01.md
+  text: '| ![[sarah_happy.png]] | Whenever you’re ready for your training, just go to either the **Terminal** or the **Pinboard**. | #right |'
 ---
 
 ## What it is

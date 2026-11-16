@@ -21,15 +21,20 @@ stats:
 cover: ../../assets/shots/31-days/shot-2.png
 coverAlt: Satria in a classroom while Diah speaks through the dialogue box.
 gallery:
-  - { src: ../../assets/shots/31-days/shot-1.png, alt: 31 Days gameplay screenshot. }
-  - { src: ../../assets/shots/31-days/shot-3.png, alt: 31 Days gameplay screenshot. }
-  - { src: ../../assets/shots/31-days/shot-4.png, alt: 31 Days gameplay screenshot. }
-  - { src: ../../assets/shots/31-days/shot-5.png, alt: 31 Days gameplay screenshot. }
+  - { src: ../../assets/shots/31-days/shot-1.png, alt: 'Klara talking to Satria and a classmate in the school hall.', caption: 'Every line in this box is one dialogue node asset.', beside: Dialogue nodes drive the whole game }
+  - { src: ../../assets/shots/31-days/shot-3.png, alt: 'A turn-based battle against a skull-headed creature, with six action buttons.', caption: 'A Dusk Zone fight on Satria’s turn.', beside: Data-driven combat }
+  - { src: ../../assets/shots/31-days/shot-4.png, alt: 'Bagas speaking to three classmates in a school corridor.', caption: 'By day: Bagas and classmates in a school corridor.', beside: What it is }
+  - { src: ../../assets/shots/31-days/shot-5.png, alt: 'The party in a turn-based battle against creatures in the Dusk Zone.', caption: 'The party in a Dusk Zone battle.', beside: What I built }
 links:
   - { label: Play on itch.io, href: 'https://plumz17.itch.io/31-days' }
   - { label: Source on GitHub, href: 'https://github.com/Plumz17/31-days' }
 credits: Music, dialogue portraits and playtesting by teammates.
 status: Playable prototype
+hook: Dialogue nodes drive the whole game
+feature: split
+frames:
+  - { src: ../../assets/shots/31-days/shot-2.png, alt: Satria in a classroom while Diah speaks through the dialogue box., label: By day }
+  - { src: ../../assets/shots/31-days/shot-5.png, alt: The party in a turn-based battle against creatures in the Dusk Zone., label: At dusk }
 ---
 
 ## What it is

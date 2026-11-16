@@ -25,6 +25,8 @@ links:
   - { label: Source on GitHub, href: 'https://github.com/Plumz17/CodelampProjectKelompok1' }
 credits: The wave system and main loop, room interactions, enemy variants, end screens and game design are teammates' work. Art was shared with a teammate.
 status: Playable prototype
+hook: Agree on the contract first
+feature: pair
 ---
 
 ## What it is

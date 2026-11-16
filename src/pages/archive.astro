@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
+import MaskBar from '../components/MaskBar.astro';
 import { DISCIPLINES, url, type Discipline } from '../lib/site';
 import { archive } from '../data/archive';
 
@@ -39,14 +40,16 @@ const rows: Row[] = [
   title="Archive"
   description="Everything Anders Tan has made: case studies, projects, coursework, experiments and unfinished games."
   flags={['at-archive']}
+  filters
 >
   <header class="top wrap">
     <p class="label">{rows.length} entries, newest first</p>
     <h1>Everything</h1>
     <p class="intro">
-      Case studies, smaller projects, coursework, experiments and things I never finished. The discipline masks in the
-      header filter this list too.
+      Case studies, smaller projects, coursework, experiments and things I never finished. The discipline masks filter
+      this list too.
     </p>
+    <MaskBar />
   </header>
 
   <div class="wrap" data-filter-group>

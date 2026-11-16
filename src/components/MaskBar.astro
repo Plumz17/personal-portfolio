@@ -1,0 +1,47 @@
+---
+// The discipline masks, in the page, for screens too narrow to fit them in the
+// header. Same buttons and same state as the header's: the header script
+// wires every [data-mask] on the page.
+import { DISCIPLINES, DISCIPLINE_KEYS } from '../lib/site';
+
+interface Props {
+  /** Read before the buttons, e.g. "Show". */
+  label?: string;
+}
+
+const { label = 'Show' } = Astro.props;
+const id = `maskbar-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<div class="maskbar" role="group" aria-labelledby={id}>
+  <span class="label maskbar-label" id={id}>{label}</span>
+  {
+    DISCIPLINE_KEYS.map((d) => (
+      <button type="button" class="mask" data-mask={d} data-d={d} aria-pressed="true">
+        <span class="mask-dot" aria-hidden="true" />
+        <span class="mask-label">{DISCIPLINES[d].label}</span>
+      </button>
+    ))
+  }
+</div>
+
+<style>
+  .maskbar {
+    display: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.9rem;
+  }
+
+  .maskbar-label {
+    margin-right: 0.35rem;
+  }
+
+  /* The header carries the masks from 1080px up. */
+  @media (max-width: 1079px) {
+    .maskbar {
+      display: flex;
+    }
+  }
+</style>

@@ -1,0 +1,537 @@
+---
+// Selected work. Each flagship picks its own treatment with `feature` in its
+// content file, so the section has a lead, a supporting record, a dark band
+// and a compact pair instead of one repeated row. New flagships default to
+// `pair` and fill pairs two at a time.
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import ShareBar from './ShareBar.astro';
+import { DISCIPLINES, url } from '../lib/site';
+
+type Project = CollectionEntry<'projects'>;
+interface Props {
+  items: Project[];
+}
+const { items } = Astro.props;
+
+// A pair forms where its first project falls in the order, and pulls the
+// next pair project up beside it even if other records sit between them.
+type Block = { kind: 'single'; p: Project } | { kind: 'pair'; items: Project[] };
+const blocks: Block[] = [];
+const used = new Set<string>();
+items.forEach((p, i) => {
+  if (used.has(p.id)) return;
+  used.add(p.id);
+  if (p.data.feature !== 'pair') return blocks.push({ kind: 'single', p });
+  const partner = items.slice(i + 1).find((q) => q.data.feature === 'pair' && !used.has(q.id));
+  if (partner) used.add(partner.id);
+  blocks.push({ kind: 'pair', items: partner ? [p, partner] : [p] });
+});
+
+const credit = (p: Project) => `${p.data.role}. ${p.data.context.split('.')[0]}, ${p.data.year}.`;
+const href = (p: Project) => url(`work/${p.id}`);
+---
+
+{
+  blocks.map((block) => {
+    if (block.kind === 'pair') {
+      return (
+        <div class="pair">
+          {block.items.map((p) => (
+            <article class="flag small" data-disc={p.data.disciplines.join(' ')}>
+              <a class="flag-link" href={href(p)}>
+                {p.data.cover && (
+                  <figure class="small-shot">
+                    <Image
+                      src={p.data.cover}
+                      alt={p.data.coverAlt}
+                      widths={[480, 800, 1100]}
+                      sizes="(max-width: 860px) 100vw, 40vw"
+                      loading="lazy"
+                      class:list={[{ pixel: p.data.coverPixel }]}
+                    />
+                  </figure>
+                )}
+                <h3>{p.data.title}</h3>
+                <p class="tag">{p.data.tagline}</p>
+                <p class="credit">
+                  <span class="dots">
+                    {p.data.disciplines.map((d) => (
+                      <span class="dot" data-d={d} title={DISCIPLINES[d].label} />
+                    ))}
+                  </span>
+                  {credit(p)}
+                </p>
+                {p.data.share && <ShareBar {...p.data.share} compact />}
+                {p.data.hook && <span class="hook">{p.data.hook}</span>}
+              </a>
+            </article>
+          ))}
+        </div>
+      );
+    }
+
+    const p = block.p;
+    const d = p.data;
+    const dots = (
+      <span class="dots">
+        {d.disciplines.map((x) => (
+          <span class="dot" data-d={x} title={DISCIPLINES[x].label} />
+        ))}
+      </span>
+    );
+    const details = (
+      <>
+        <p class="credit">
+          {dots}
+          {credit(p)}
+        </p>
+        <p class="stack">{d.stack.slice(0, 4).join(', ')}</p>
+        {d.share && <ShareBar {...d.share} compact />}
+        {d.hook && <span class="hook">{d.hook}</span>}
+      </>
+    );
+
+    if (d.feature === 'lead') {
+      return (
+        <article class="flag lead" data-disc={d.disciplines.join(' ')}>
+          <a class="flag-link" href={href(p)}>
+            <h3>{d.title}</h3>
+            <div class="lead-body">
+              {d.cover && (
+                <figure class="lead-shot">
+                  <Image
+                    src={d.cover}
+                    alt={d.coverAlt}
+                    widths={[640, 1000, 1400]}
+                    sizes="(max-width: 860px) 100vw, 62vw"
+                    loading="eager"
+                  />
+                </figure>
+              )}
+              <div class="lead-side">
+                <p class="tag">{d.tagline}</p>
+                {d.excerpt && (
+                  <figure class="source">
+                    <figcaption>As the writer typed it, in {d.excerpt.source}</figcaption>
+                    <code>{d.excerpt.text}</code>
+                  </figure>
+                )}
+                {details}
+              </div>
+            </div>
+          </a>
+        </article>
+      );
+    }
+
+    if (d.feature === 'split') {
+      return (
+        <article class="flag split" data-disc={d.disciplines.join(' ')}>
+          <a class="flag-link" href={href(p)}>
+            <div class="split-text">
+              <h3>{d.title}</h3>
+              <p class="tag">{d.tagline}</p>
+              {details}
+            </div>
+            <div class="frames">
+              {(d.frames.length ? d.frames : d.cover ? [{ src: d.cover, alt: d.coverAlt, label: '', pixel: d.coverPixel }] : []).map(
+                (f) => (
+                  <figure>
+                    <Image
+                      src={f.src}
+                      alt={f.alt}
+                      widths={[480, 800, 1100]}
+                      sizes="(max-width: 860px) 50vw, 30vw"
+                      loading="lazy"
+                      class:list={[{ pixel: f.pixel }]}
+                    />
+                    {f.label && <figcaption>{f.label}</figcaption>}
+                  </figure>
+                ),
+              )}
+            </div>
+          </a>
+        </article>
+      );
+    }
+
+    // band
+    return (
+      <article class="flag band" data-disc={d.disciplines.join(' ')}>
+        <a class="flag-link" href={href(p)}>
+          {d.stats.length >= 2 && (
+            <div class="figures">
+              {d.stats.slice(0, 2).map((s) => (
+                <p>
+                  <strong>{s.value}</strong>
+                  <span>{s.label}</span>
+                </p>
+              ))}
+            </div>
+          )}
+          <div class="band-text">
+            <h3>{d.title}</h3>
+            <p class="tag">{d.tagline}</p>
+            {details}
+          </div>
+        </a>
+      </article>
+    );
+  })
+}
+
+<style>
+  /* ---- Shared ---------------------------------------------------------- */
+  .flag-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  h3 {
+    text-transform: uppercase;
+    font-variation-settings: 'wdth' 75;
+    line-height: 0.84;
+    letter-spacing: -0.02em;
+    transition: letter-spacing 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* Hover: the headline loosens, the screenshot leans in, the second frame
+     rises to meet the first. Small, so the page never jumps. */
+  .flag-link:hover h3,
+  .flag-link:focus-visible h3 {
+    letter-spacing: 0;
+  }
+
+  .tag {
+    margin: 0;
+    line-height: 1.32;
+    text-wrap: pretty;
+  }
+
+  .credit {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+
+  .credit .dots {
+    margin-right: 0.5rem;
+  }
+
+  .stack {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    color: var(--ink-2);
+  }
+
+  /* The link text is the project's own first idea, not "read more". */
+  .hook {
+    justify-self: start;
+    font-weight: 700;
+    font-size: 1.05rem;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.22em;
+  }
+
+  .flag-link:hover .hook,
+  .flag-link:focus-visible .hook {
+    text-decoration-thickness: 3px;
+  }
+
+  figure {
+    margin: 0;
+  }
+
+  figure :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .lead-shot :global(img),
+    .small-shot :global(img) {
+      transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .flag-link:hover .lead-shot :global(img),
+    .flag-link:hover .small-shot :global(img) {
+      transform: scale(1.035);
+    }
+    .frames figure:nth-child(2) {
+      transition: margin-top 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .flag-link:hover .frames figure:nth-child(2) {
+      margin-top: clamp(0.75rem, 2.5vw, 2.25rem);
+    }
+  }
+
+  /* ---- Lead: the game the whole site is built from ------------------- */
+  .lead {
+    padding-block: clamp(2rem, 5vw, 4rem) clamp(3rem, 7vw, 6rem);
+  }
+
+  .lead h3 {
+    font-size: clamp(3.2rem, 11.5vw, 10rem);
+    margin-left: -0.04em;
+  }
+
+  .lead-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+    gap: clamp(1.25rem, 3vw, 2.75rem);
+    align-items: start;
+    margin-top: clamp(1rem, 2.5vw, 2rem);
+  }
+
+  .lead-shot {
+    border: 1px solid var(--rule);
+    aspect-ratio: 16 / 9;
+    background: var(--paper-2);
+    overflow: hidden;
+  }
+
+  .lead-side {
+    display: grid;
+    gap: 1.1rem;
+    align-content: start;
+  }
+
+  .lead .tag {
+    font-size: clamp(1.15rem, 1.6vw, 1.45rem);
+  }
+
+  /* One real row from the game's dialogue vault, next to what it becomes. */
+  .source {
+    display: grid;
+    gap: 0.4rem;
+    padding-block: 0.75rem;
+    border-block: 1px solid var(--rule);
+  }
+
+  .source figcaption {
+    font-size: 0.82rem;
+    color: var(--ink-2);
+  }
+
+  .source code {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---- Split: title beside two labelled frames ----------------------- */
+  .split {
+    border-top: 1px solid var(--rule);
+    padding-block: clamp(2.25rem, 5vw, 4rem);
+  }
+
+  .split .flag-link {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr);
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    align-items: start;
+  }
+
+  .split-text {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+  }
+
+  .split h3 {
+    font-size: clamp(2.6rem, 6vw, 5.4rem);
+  }
+
+  .split .tag {
+    font-size: clamp(1.05rem, 1.4vw, 1.25rem);
+  }
+
+  .frames {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.75rem;
+    /* Without this the offset second frame stretches the first one taller,
+       and object-fit crops its screenshot. */
+    align-items: start;
+  }
+
+  /* The second frame sits lower: day, then the night that follows it. */
+  .frames figure:nth-child(2) {
+    margin-top: clamp(1.5rem, 5vw, 4.5rem);
+  }
+
+  .frames figure > :global(img) {
+    height: auto;
+    aspect-ratio: 16 / 9;
+    border: 1px solid var(--rule);
+  }
+
+  .frames figcaption {
+    margin-top: 0.45rem;
+    font-size: 0.88rem;
+    color: var(--ink-2);
+  }
+
+  /* ---- Band: a result told in two numbers ---------------------------- */
+  .band {
+    --ink: #f1eee6;
+    --ink-2: #b9b3a6;
+    --rule: #f1eee6;
+    --paper: #15140f;
+    margin-inline: calc(50% - 50vw);
+    padding: clamp(2.5rem, 6vw, 4.5rem) max(var(--gutter), calc((100vw - var(--max)) / 2));
+    background: #15140f;
+    color: var(--ink);
+  }
+
+  /* A night surface in both themes, so its dots use the night colours. */
+  .band [data-d='games'] {
+    --d: #ff6247;
+  }
+  .band [data-d='software'] {
+    --d: #3fd983;
+  }
+  .band [data-d='ai'] {
+    --d: #8795ff;
+  }
+
+  :global([data-theme='dusk']) .band {
+    --paper: #231d29;
+    --ink-2: #aba2ad;
+    background: #231d29;
+  }
+
+  .band .flag-link {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: clamp(1.5rem, 5vw, 4.5rem);
+    align-items: center;
+  }
+
+  .figures {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .figures p {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding-right: 1rem;
+  }
+
+  /* The baseline is the quiet number; the drop is the finding. */
+  .figures p:first-child {
+    color: var(--ink-2);
+  }
+
+  .figures p + p {
+    padding-left: clamp(1rem, 2.5vw, 2rem);
+    border-left: 1px solid color-mix(in srgb, var(--ink) 35%, transparent);
+  }
+
+  .figures strong {
+    font-size: clamp(3.6rem, 10vw, 8.5rem);
+    font-variation-settings: 'wdth' 75;
+    font-weight: 800;
+    line-height: 0.8;
+    letter-spacing: -0.02em;
+  }
+
+  .figures span {
+    font-size: 0.95rem;
+    line-height: 1.35;
+    max-width: 18ch;
+  }
+
+  .band-text {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .band h3 {
+    font-size: clamp(2.2rem, 4.4vw, 3.8rem);
+  }
+
+  .band .tag {
+    font-size: 1.05rem;
+  }
+
+  /* ---- Pair: two smaller records, deliberately unequal --------------- */
+  .pair {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    align-items: start;
+    border-top: 1px solid var(--rule);
+    padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(1rem, 3vw, 2rem);
+  }
+
+  /* The band's own edge already separates it from what follows. */
+  .band + .pair {
+    border-top: 0;
+  }
+
+  /* Both projects filtered out: drop the empty row and its rule. */
+  .pair:not(:has(> .flag:not([data-masked]))) {
+    display: none;
+  }
+
+  /* One left after filtering: let it take the full width. */
+  .pair:has(> .flag[data-masked]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pair:has(> .flag[data-masked]) > .small {
+    margin-top: 0;
+    max-width: 44rem;
+  }
+
+  .pair > .small:nth-child(2) {
+    margin-top: clamp(0rem, 7vw, 6rem);
+  }
+
+  .small .flag-link {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .small-shot {
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border: 1px solid var(--rule);
+    background: var(--paper-2);
+    margin-bottom: 0.35rem;
+  }
+
+  .small h3 {
+    font-size: clamp(2rem, 3.6vw, 3.2rem);
+  }
+
+  .small .tag {
+    font-size: 1rem;
+    max-width: 46ch;
+  }
+
+  @media (max-width: 860px) {
+    .lead-body,
+    .split .flag-link,
+    .band .flag-link,
+    .pair {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .pair > .small:nth-child(2) {
+      margin-top: 0;
+    }
+    .frames figure:nth-child(2) {
+      margin-top: 1.25rem;
+    }
+  }
+</style>

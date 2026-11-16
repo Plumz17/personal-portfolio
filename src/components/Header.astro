@@ -1,6 +1,13 @@
 ---
 import { DISCIPLINES, DISCIPLINE_KEYS, url } from '../lib/site';
 import { profile } from '../data/profile';
+
+interface Props {
+  /** Show the discipline masks: only on pages with something to filter. */
+  filters?: boolean;
+}
+
+const { filters = false } = Astro.props;
 ---
 
 <header class="site-header">
@@ -10,73 +17,79 @@ import { profile } from '../data/profile';
       <span class="brand-name">{profile.shortName}</span>
     </a>
 
-    <div class="masks" role="group" aria-label="Show or hide a discipline">
-      {
-        DISCIPLINE_KEYS.map((d) => (
-          <button
-            type="button"
-            class="mask"
-            data-mask={d}
-            data-d={d}
-            aria-pressed="true"
-            title={`${DISCIPLINES[d].label}: press ${DISCIPLINES[d].key} to toggle`}
-          >
-            <span class="mask-dot" aria-hidden="true" />
-            <span class="mask-label">{DISCIPLINES[d].label}</span>
-            <kbd class="key" aria-hidden="true">{DISCIPLINES[d].key}</kbd>
-          </button>
-        ))
-      }
-    </div>
+    {
+      filters && (
+        <div class="masks" role="group" aria-label="Show or hide a discipline">
+          {DISCIPLINE_KEYS.map((d) => (
+            <button
+              type="button"
+              class="mask"
+              data-mask={d}
+              data-d={d}
+              aria-pressed="true"
+              title={`${DISCIPLINES[d].label}: press ${DISCIPLINES[d].key} to toggle`}
+            >
+              <span class="mask-dot" aria-hidden="true" />
+              <span class="mask-label">{DISCIPLINES[d].label}</span>
+              <kbd class="key" aria-hidden="true">{DISCIPLINES[d].key}</kbd>
+            </button>
+          ))}
+        </div>
+      )
+    }
 
     <nav class="nav" aria-label="Main">
-      <a href={url('/#work')}>Work</a>
       <a href={url('/archive')}>Archive</a>
       <a href={url('/#about')}>About</a>
     </nav>
 
-    <div class="tools">
-      <button type="button" class="tool" data-open-terminal aria-label="Search projects">
-        <span>Search</span>
-        <kbd class="key" aria-hidden="true">/</kbd>
-      </button>
-      <button type="button" class="tool tool-sound" data-sound-toggle aria-pressed="false" aria-label="Sound">
+    <button type="button" class="search" data-open-terminal aria-label="Search projects">
+      <svg class="search-icon" viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="6.8" cy="6.8" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6" />
+        <path d="M10.3 10.3L14 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" />
+      </svg>
+      <span class="search-word">Search</span>
+      <kbd class="key" aria-hidden="true">/</kbd>
+    </button>
+
+    <div class="pair">
+      <button type="button" class="tool" data-sound-toggle aria-pressed="false" aria-label="Sound">
         <svg class="sound-icon" viewBox="0 0 16 16" aria-hidden="true">
           <path d="M2 6h3l4-3v10L5 10H2z" fill="currentColor" />
           <path class="waves" d="M11 5.5c1 .8 1 4.2 0 5M12.8 3.8c2 1.8 2 6.6 0 8.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
           <path class="mute" d="M11 5.5l4 5M15 5.5l-4 5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
         </svg>
       </button>
-      <button type="button" class="tool tool-theme" data-theme-toggle aria-label="Switch between day and dusk colours">
+      <button type="button" class="tool" data-theme-toggle aria-label="Switch between day and dusk colours">
         <span class="theme-icon" aria-hidden="true"></span>
       </button>
     </div>
+
   </div>
 </header>
 
 <style>
+  /* Solid paper, like the page under it: no frosted glass. */
   .site-header {
     position: sticky;
     top: 0;
     z-index: 40;
-    background: color-mix(in srgb, var(--paper) 92%, transparent);
-    backdrop-filter: blur(6px);
+    background: var(--paper);
     border-bottom: 1px solid var(--rule);
   }
 
   .bar {
     display: flex;
     align-items: center;
-    gap: 0.5rem 1.25rem;
+    gap: 0.4rem;
     min-height: var(--header-h);
-    flex-wrap: wrap;
-    padding-block: 0.35rem;
   }
 
   .brand {
     display: inline-flex;
     align-items: center;
     gap: 0.55rem;
+    min-height: 2.75rem;
     margin-right: auto;
     text-decoration: none;
     font-weight: 800;
@@ -84,6 +97,7 @@ import { profile } from '../data/profile';
     font-size: 1.15rem;
     letter-spacing: -0.01em;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   /* Three overlapping discs, the site's mark. */
@@ -105,96 +119,85 @@ import { profile } from '../data/profile';
   .masks {
     display: flex;
     gap: 0.25rem;
-  }
-
-  .mask {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    min-height: 2.25rem;
-    padding: 0.2rem 0.55rem;
-    border: 1px solid var(--ink);
-    background: transparent;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition:
-      opacity 0.15s,
-      border-color 0.15s;
-  }
-
-  .mask-dot {
-    width: 0.75rem;
-    height: 0.75rem;
-    border-radius: 50%;
-    background: var(--d);
-    border: 1.5px solid var(--d);
-    transition: background 0.15s;
-  }
-
-  .mask[aria-pressed='false'] {
-    border-style: dashed;
-    color: var(--ink-2);
-  }
-
-  .mask[aria-pressed='false'] .mask-dot {
-    background: transparent;
-  }
-
-  .mask[aria-pressed='false'] .mask-label {
-    text-decoration: line-through;
-  }
-
-  .mask:hover {
-    border-color: var(--d);
+    margin-right: auto;
   }
 
   .nav {
     display: flex;
-    gap: 1.1rem;
+    gap: 0.25rem;
+    margin-right: 0.6rem;
     font-size: 0.92rem;
   }
 
   .nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding-inline: 0.5rem;
     text-decoration: none;
-    padding-block: 0.5rem;
   }
 
   .nav a:hover {
     text-decoration: underline;
+    text-underline-offset: 0.25em;
   }
 
-  .tools {
-    display: flex;
-    gap: 0.25rem;
-  }
-
+  .search,
   .tool {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    min-height: 2.25rem;
-    min-width: 2.25rem;
     justify-content: center;
-    padding: 0.2rem 0.55rem;
+    gap: 0.45rem;
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+    padding: 0 0.7rem;
     border: 1px solid var(--ink);
-    background: var(--ink);
-    color: var(--paper);
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     cursor: pointer;
   }
 
-  .tool-theme,
-  .tool-sound {
+  .search {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .search-icon {
+    display: none;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* Sound and colours share one frame: two settings, one place. */
+  .pair {
+    display: flex;
+  }
+
+  .tool {
+    padding: 0;
     background: transparent;
     color: var(--ink);
+  }
+
+  .tool + .tool {
+    border-left: 0;
+  }
+
+  .tool:hover,
+  .search:hover {
+    outline: 1px solid var(--ink);
+    outline-offset: -3px;
+  }
+
+  .search:hover {
+    outline-color: var(--paper);
   }
 
   .sound-icon {
     width: 1rem;
     height: 1rem;
   }
-  .tool-sound[aria-pressed='true'] .mute,
-  .tool-sound[aria-pressed='false'] .waves {
+  [data-sound-toggle][aria-pressed='true'] .mute,
+  [data-sound-toggle][aria-pressed='false'] .waves {
     display: none;
   }
 
@@ -212,33 +215,36 @@ import { profile } from '../data/profile';
     transform: rotate(180deg);
   }
 
-  @media (max-width: 760px) {
-    .mask-label,
-    .mask .key,
-    .tool > span:not(.theme-icon) {
+  /* Below 1080px the masks move into the page, next to what they filter. */
+  @media (max-width: 1079px) {
+    .masks {
       display: none;
     }
-    .mask {
-      min-width: 2.5rem;
-      min-height: 2.5rem;
-      justify-content: center;
+  }
+
+  /* Phones: one row. Brand, search, settings. The nav links are in the
+     footer and on the pages themselves. */
+  @media (max-width: 699px) {
+    .nav,
+    .search-word,
+    .search .key {
+      display: none;
     }
-    .tool {
-      min-height: 2.5rem;
-      min-width: 2.5rem;
+    .search {
+      padding: 0;
     }
-    .mask-dot {
-      width: 0.95rem;
-      height: 0.95rem;
+    .search-icon {
+      display: block;
     }
-    .nav {
-      order: 5;
-      width: 100%;
-      gap: 1.25rem;
-      border-top: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+    .brand {
+      font-size: 1.05rem;
+      gap: 0.45rem;
     }
-    .bar {
-      gap: 0.25rem 0.5rem;
+  }
+
+  @media (max-width: 359px) {
+    .brand-name {
+      display: none;
     }
   }
 </style>
@@ -255,6 +261,7 @@ import { profile } from '../data/profile';
       const own = (el.dataset.disc ?? '').split(' ').filter(Boolean) as Discipline[];
       el.toggleAttribute('data-masked', own.length > 0 && !own.some((d) => active.includes(d)));
     });
+    // Header and in-page mask buttons share one state.
     document.querySelectorAll<HTMLButtonElement>('[data-mask]').forEach((btn) => {
       btn.setAttribute('aria-pressed', String(isOn(btn.dataset.mask as Discipline)));
     });
@@ -280,7 +287,7 @@ import { profile } from '../data/profile';
   document.addEventListener('pf:masks', applyMasks);
   applyMasks();
 
-  // Keys 1, 2, 3 toggle the masks, unless the visitor is typing somewhere.
+  // Keys 1, 2, 3 toggle the masks on every page, unless the visitor is typing.
   const KEYS: Record<string, Discipline> = { '1': 'games', '2': 'software', '3': 'ai' };
   document.addEventListener('keydown', (event) => {
     if (event.ctrlKey || event.metaKey || event.altKey) return;

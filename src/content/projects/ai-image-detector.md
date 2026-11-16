@@ -2,7 +2,7 @@
 title: AI Image Detector
 tagline: A web and mobile app that says whether a picture is a photo or AI-generated, with a test suite that shows exactly where the model stops working.
 tier: flagship
-order: 4
+order: 3
 disciplines: [software, ai]
 year: '2026'
 context: Capstone project, Universitas Gadjah Mada
@@ -23,6 +23,8 @@ links:
   - { label: Source on GitHub, href: 'https://github.com/Plumz17/ai-image-detector' }
 credits: The PatchCraft model and weights come from a thesis author and are used unmodified. The slim server (LiteRT and NumPy), model conversion, mobile app, about page and UI design are teammates' work.
 status: Deployed
+hook: Measure where it breaks
+feature: band
 ---
 
 ## What it is
