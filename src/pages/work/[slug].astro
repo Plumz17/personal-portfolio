@@ -3,7 +3,6 @@ import { Image } from 'astro:assets';
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import ShareBar from '../../components/ShareBar.astro';
-import { toys } from '../../components/toys/registry';
 import { DISCIPLINES, url } from '../../lib/site';
 
 export async function getStaticPaths() {
@@ -21,10 +20,8 @@ export async function getStaticPaths() {
 const { entry, next, position, total } = Astro.props;
 const { data } = entry;
 const { Content } = await render(entry);
-const Toy = data.toy ? toys[data.toy] : undefined;
 
 const flags = ['at-project', `at-${entry.id}`];
-if (Toy) flags.push('has-toy');
 if (data.credits) flags.push('has-credits');
 const pad = (n: number) => String(n).padStart(2, '0');
 ---
@@ -126,14 +123,6 @@ const pad = (n: number) => String(n).padStart(2, '0');
         }
       </aside>
     </div>
-
-    {
-      Toy && (
-        <section class="try wrap" id="try">
-          <Toy />
-        </section>
-      )
-    }
 
     {
       data.gallery.length > 0 && (
@@ -294,10 +283,6 @@ const pad = (n: number) => String(n).padStart(2, '0');
   .panel-links .btn {
     width: 100%;
     justify-content: space-between;
-  }
-
-  .try {
-    margin-top: clamp(1.5rem, 4vw, 3rem);
   }
 
   .gallery {

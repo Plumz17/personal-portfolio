@@ -18,7 +18,6 @@ stats:
   - { value: '96%', label: 'accuracy on the clean baseline' }
   - { value: '50%', label: 'after JPEG quality 50' }
   - { value: '17', label: 'test conditions run' }
-toy: crop-vote
 links:
   - { label: Live web app, href: 'https://ai-image-detector-web-seven.vercel.app' }
   - { label: Source on GitHub, href: 'https://github.com/Plumz17/ai-image-detector' }
@@ -77,7 +76,3 @@ On 200 clean test images the model is right 96% of the time. I then re-ran the s
 - On 20 real photos passed through an AI enhancer, 13 were called fake.
 
 So the app says so. The result is worded as an estimate, JPEG uploads get a warning, and the README documents every limitation.
-
-## Try it
-
-Two views of the same system: how an image becomes crops and votes, and how accuracy holds up under each test.

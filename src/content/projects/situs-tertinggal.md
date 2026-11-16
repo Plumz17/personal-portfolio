@@ -20,7 +20,6 @@ stats:
   - { value: '3', label: 'ghost types' }
 cover: ../../assets/shots/situs-tertinggal/cover.png
 coverAlt: Title art of a kuntilanak, a long-haired ghost in white, against dark wood.
-toy: diagonal-menu
 links:
   - { label: Play on itch.io, href: 'https://plumz17.itch.io/situs-tertinggal' }
   - { label: Source on GitHub, href: 'https://github.com/Plumz17/CodelampProjectKelompok1' }
@@ -75,7 +74,3 @@ for i in count:
 ```
 
 Because it is a real `Container` marked `@tool`, it re-lays itself in the editor whenever a button is added, and the three numbers are adjusted from the inspector.
-
-## Try it
-
-The same layout rule, running on the game's own title buttons.

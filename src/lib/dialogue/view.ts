@@ -1,6 +1,5 @@
 // DOM renderer for a dialogue: portrait, name, typewriter text, choices.
-// Used by the site guide and by the Truths Astray lab, so both look and
-// behave the same.
+// Used by the site guide for Dorothy and the hallway characters.
 
 import type { DialogueLine, DialogueOption } from './parser';
 

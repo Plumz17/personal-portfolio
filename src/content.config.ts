@@ -45,8 +45,6 @@ const projects = defineCollection({
       gallery: z
         .array(z.object({ src: image(), alt: z.string(), pixel: z.boolean().default(false) }))
         .default([]),
-      /** Id of an interactive component registered in src/components/toys/registry.ts. */
-      toy: z.string().optional(),
       /** What teammates built, so my part is never overstated. */
       credits: z.string().optional(),
       status: z.string().optional(),

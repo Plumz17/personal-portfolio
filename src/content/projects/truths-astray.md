@@ -25,7 +25,6 @@ gallery:
   - { src: ../../assets/shots/truths-astray/office.png, alt: Astara in the office next to the terminal and pinboard. }
   - { src: ../../assets/shots/truths-astray/bedroom.png, alt: Astara in the dormitory room on the first day. }
   - { src: ../../assets/shots/truths-astray/pinboard.png, alt: The pinboard with two articles pinned. }
-toy: dialogue-lab
 credits: The pinboard, typewriter, article snippets, shaders and most of the home-floor scene are a teammate's work, and most story and article writing is another's. Character portraits drawn with my sister.
 status: In development, not yet public
 ---
@@ -82,7 +81,3 @@ Lines whose requirements are not met are skipped, choices are filtered the same 
 ### Why it mattered
 
 Most of the script was written by one teammate. Keeping dialogue out of the engine meant story and code could change at the same time without touching the same files.
-
-## Try it
-
-The box below runs a TypeScript port of the same parser and runtime. Edit the table and the conversation changes as you type.

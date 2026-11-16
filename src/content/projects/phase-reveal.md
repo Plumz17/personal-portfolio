@@ -27,7 +27,6 @@ gallery:
   - { src: ../../assets/shots/phase-reveal/shot-4.png, alt: Phase Reveal gameplay screenshot., pixel: true }
   - { src: ../../assets/shots/phase-reveal/shot-5.png, alt: Phase Reveal gameplay screenshot., pixel: true }
   - { src: ../../assets/shots/ggj-solo-2026.png, alt: Award certificate naming Team ScuTI and Phase Reveal as jury's choice best game. }
-toy: jump-lab
 links:
   - { label: Play on itch.io, href: 'https://avtne.itch.io/phase-reveal' }
   - { label: Source on GitHub, href: 'https://github.com/avtne/phase-reveal' }
@@ -76,7 +75,3 @@ The slanted title menu is a small custom `Container` that offsets each child dia
 ## Outcome
 
 **Game Terbaik Pilihan Juri** (jury's choice for best game) at Global Game Jam Solo 2026, held over 48 hours at Solo Technopark, Surakarta.
-
-## Try it
-
-The sandbox below runs my controller with the game's real constants. Turn the assists down to zero to feel what they were doing.

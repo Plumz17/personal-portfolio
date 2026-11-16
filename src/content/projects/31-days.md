@@ -25,7 +25,6 @@ gallery:
   - { src: ../../assets/shots/31-days/shot-3.png, alt: 31 Days gameplay screenshot. }
   - { src: ../../assets/shots/31-days/shot-4.png, alt: 31 Days gameplay screenshot. }
   - { src: ../../assets/shots/31-days/shot-5.png, alt: 31 Days gameplay screenshot. }
-toy: node-inspector
 links:
   - { label: Play on itch.io, href: 'https://plumz17.itch.io/31-days' }
   - { label: Source on GitHub, href: 'https://github.com/Plumz17/31-days' }
@@ -84,7 +83,3 @@ Characters, enemies, skills and encounters are separate assets sharing a `UnitDa
 ## Outcome
 
 Submitted to GEMASTIK XVIII and to Liga KOMATIK. The build on itch.io runs in the browser.
-
-## Try it
-
-This is the node inspector, rebuilt for the web. Set a node's flags, play it, and watch what the game does in response.
