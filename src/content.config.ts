@@ -40,6 +40,8 @@ const projects = defineCollection({
       links: z.array(z.object({ label: z.string(), href: z.string() })).default([]),
       cover: image().optional(),
       coverAlt: z.string().default(''),
+      /** Printed under the cover where the treatment shows one (band). */
+      coverCaption: z.string().optional(),
       /** True for low-resolution pixel art that must not be smoothed. */
       coverPixel: z.boolean().default(false),
       /**

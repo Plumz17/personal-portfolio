@@ -70,6 +70,9 @@ const panelSpan = firstPictured === -1 ? rows.length : firstPictured;
 
 // Long titles get a smaller headline so the first screen still shows the work.
 const titleLength = Math.max(data.title.length, 8);
+// A tall capture (an app screen, say) is not cut to a wide strip: it goes whole
+// beside the first section, above the facts.
+const tallCover = !!data.cover && data.cover.height > data.cover.width * 0.8;
 ---
 
 <Base title={data.title} description={data.tagline} flags={flags} image={data.cover?.src}>
@@ -88,8 +91,8 @@ const titleLength = Math.max(data.title.length, 8);
     </header>
 
     {
-      data.cover && (
-        <div class="cover wrap">
+      data.cover && !tallCover && (
+        <figure class="cover wrap">
           <Image
             src={data.cover}
             alt={data.coverAlt}
@@ -98,7 +101,8 @@ const titleLength = Math.max(data.title.length, 8);
             loading="eager"
             class:list={[{ pixel: data.coverPixel }]}
           />
-        </div>
+          {data.coverCaption && <figcaption class="label">{data.coverCaption}</figcaption>}
+        </figure>
       )
     }
 
@@ -119,6 +123,11 @@ const titleLength = Math.max(data.title.length, 8);
 
             {i === 0 ? (
               <aside class="panel" aria-label="Project facts" style={`--span: ${panelSpan}`}>
+                {tallCover && data.cover && (
+                  <div class="panel-shot">
+                    <Shot src={data.cover} alt={data.coverAlt} caption={data.coverCaption} pixel={data.coverPixel} />
+                  </div>
+                )}
                 <dl>
                   <div>
                     <dt class="label">Role</dt>
@@ -244,6 +253,7 @@ const titleLength = Math.max(data.title.length, 8);
 
   .cover {
     margin-top: clamp(1.5rem, 4vw, 3rem);
+    margin-bottom: 0;
   }
 
   .cover :global(img) {
@@ -252,6 +262,11 @@ const titleLength = Math.max(data.title.length, 8);
     max-height: 78vh;
     object-fit: cover;
     border: 1px solid var(--rule);
+  }
+
+  .cover figcaption {
+    margin-top: 0.6rem;
+    max-width: 48ch;
   }
 
   /* The write-up at reading width; beside it, whatever illustrates each part.
@@ -319,6 +334,17 @@ const titleLength = Math.max(data.title.length, 8);
   .panel {
     display: grid;
     gap: 1.4rem;
+    padding-top: 1rem;
+    border-top: 3px solid var(--ink);
+  }
+
+  /* With a screenshot on top, the rule moves down to sit over the facts. */
+  .panel:has(.panel-shot) {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .panel-shot + dl {
     padding-top: 1rem;
     border-top: 3px solid var(--ink);
   }

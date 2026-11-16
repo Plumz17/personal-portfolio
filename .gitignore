@@ -23,3 +23,8 @@ Thumbs.db
 # Local working notes for the build; not part of the site.
 /CLAUDE.md
 /links.md
+
+# Impeccable design-tool context; local only.
+/.impeccable/
+/DESIGN.md
+/PRODUCT.md

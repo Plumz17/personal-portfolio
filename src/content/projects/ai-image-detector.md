@@ -21,6 +21,9 @@ stats:
 links:
   - { label: Live web app, href: 'https://ai-image-detector-web-seven.vercel.app' }
   - { label: Source on GitHub, href: 'https://github.com/Plumz17/ai-image-detector' }
+cover: ../../assets/shots/ai-image-detector/result.png
+coverAlt: 'The live web app on the Tung Tung Tung Sahur meme image: likely AI-generated, both checked parts flagged, with a note that JPEGs are harder to judge.'
+coverCaption: 'The live app on the AI-generated Tung Tung Tung Sahur meme. Not a settled call: across ten runs it said AI-generated seven times.'
 credits: The PatchCraft model and weights come from a thesis author and are used unmodified. The slim server (LiteRT and NumPy), model conversion, mobile app, about page and UI design are teammates' work.
 status: Deployed
 hook: Measure where it breaks
