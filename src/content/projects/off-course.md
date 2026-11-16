@@ -2,7 +2,7 @@
 title: Off Course!
 tagline: A zero-gravity puzzle game about slingshotting a guinea pig between gravity orbs. I drew the tileset and dressed the levels.
 tier: project
-order: 10
+order: 12
 disciplines: [games]
 year: '2025'
 context: GMTK Game Jam 2025. Theme, Loop.

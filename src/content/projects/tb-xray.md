@@ -2,7 +2,7 @@
 title: Tuberculosis detection from chest X-rays
 tagline: A classical image-processing pipeline, no deep learning, that reaches 96.9% accuracy and shows which texture features actually find the disease.
 tier: project
-order: 2
+order: 4
 disciplines: [ai]
 year: '2025'
 context: Digital Image Processing course, UGM

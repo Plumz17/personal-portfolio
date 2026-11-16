@@ -2,7 +2,7 @@
 title: Student depression prediction
 tagline: A tabular ML pipeline on a public student survey, ending in a small text tool that returns a prediction and its confidence.
 tier: project
-order: 8
+order: 10
 disciplines: [ai]
 year: '2026'
 context: Machine Learning course, UGM

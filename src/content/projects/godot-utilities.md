@@ -2,7 +2,7 @@
 title: Godot utilities and teaching material
 tagline: Reusable Godot code I carry between projects, and the lesson repository I wrote for the game development division I lead.
 tier: project
-order: 11
+order: 13
 disciplines: [games]
 year: '2026'
 context: Personal tooling, and KOMATIK UGM's GaM-LAB division

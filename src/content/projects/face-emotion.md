@@ -2,7 +2,7 @@
 title: Face emotion classification
 tagline: Four CNN variants trained on 25,000 AffectNet faces, lifting test accuracy from a 55% baseline to 64%.
 tier: project
-order: 7
+order: 9
 disciplines: [ai]
 year: '2026'
 context: Deep Learning course mini project, UGM

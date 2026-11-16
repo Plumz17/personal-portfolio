@@ -2,7 +2,7 @@
 title: Banana variety and ripeness
 tagline: Two classifiers from one pipeline, telling five banana varieties and four ripeness stages apart with hand-built features and an SVM.
 tier: project
-order: 6
+order: 8
 disciplines: [ai]
 year: '2026'
 context: Pattern Recognition course, UGM

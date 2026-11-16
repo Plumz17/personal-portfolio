@@ -2,7 +2,7 @@
 title: SolidCard
 tagline: A flashcard app with no backend. Every deck lives in the user's own Solid Pod, and sharing means letting someone copy from yours.
 tier: project
-order: 3
+order: 5
 disciplines: [software]
 year: '2026'
 context: Platform-based Software Development course, UGM

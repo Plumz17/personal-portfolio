@@ -2,7 +2,7 @@
 title: Cybersecurity knowledge graph
 tagline: Extending an existing pipeline that reads security news and builds a queryable graph of threats, by adding two CVE feeds and a formal ontology.
 tier: project
-order: 4
+order: 6
 disciplines: [software, ai]
 year: '2026'
 context: Software Engineering Methods course, UGM

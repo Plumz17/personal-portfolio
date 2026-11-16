@@ -2,7 +2,7 @@
 title: Does the news move the rupiah?
 tagline: An NLP study testing whether geopolitical headlines can predict next-day USD/IDR direction. So far, they can't.
 tier: project
-order: 1
+order: 3
 disciplines: [ai]
 year: '2026'
 context: Natural Language Processing course, UGM. In progress, stage 3 of 4.

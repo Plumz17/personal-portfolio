@@ -2,7 +2,7 @@
 title: Animal sound classification
 tagline: Classifying animal calls from audio clips. I wrote the feature extraction stage that turns waveforms into numbers a model can use.
 tier: project
-order: 9
+order: 11
 disciplines: [ai]
 year: '2026'
 context: Pattern Recognition course, UGM

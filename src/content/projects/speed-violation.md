@@ -2,7 +2,7 @@
 title: Speed violations from CCTV
 tagline: Detecting vehicles that break the speed limit in footage from a Yogyakarta junction, using YOLO11n, ByteTrack and a bird's-eye-view transform.
 tier: project
-order: 5
+order: 7
 disciplines: [ai]
 year: '2026'
 context: Computer Vision and Image Analysis course, UGM
