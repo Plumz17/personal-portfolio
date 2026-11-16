@@ -80,8 +80,12 @@ const config = {
       }
     </div>
     <div class="pad">
-      <button type="button" data-walk="-1" aria-label="Walk left">◀</button>
-      <button type="button" data-walk="1" aria-label="Walk right">▶</button>
+      <button type="button" data-walk="-1" aria-label="Walk left">
+        <svg viewBox="0 0 5 9" aria-hidden="true"><path d="M4 0h1v9h-1v-1h-1v-1h-1v-1h-1v-1h-1v-1h1v-1h1v-1h1v-1h1z" /></svg>
+      </button>
+      <button type="button" data-walk="1" aria-label="Walk right">
+        <svg viewBox="0 0 5 9" aria-hidden="true"><path d="M0 0h1v1h1v1h1v1h1v1h1v1h-1v1h-1v1h-1v1h-1v1h-1z" /></svg>
+      </button>
     </div>
   </div>
   <p class="caption wrap">
@@ -95,8 +99,12 @@ const config = {
     margin-top: clamp(2rem, 5vw, 4rem);
   }
 
+  /* --scale is one scene pixel in CSS pixels. --ppx is the pixel the walk
+     buttons are built from: the same, except on phones, where the scene runs
+     at 1x and the buttons use 2x so they stay a comfortable size. */
   .stage {
     --scale: 2;
+    --ppx: 2;
     position: relative;
     overflow: hidden;
     border-block: 1px solid var(--rule);
@@ -109,9 +117,10 @@ const config = {
     outline-offset: -4px;
   }
 
+  /* Sized in whole scene pixels by the script; never stretched to fit. */
   canvas {
     display: block;
-    width: 100%;
+    max-width: none;
   }
 
   .signs {
@@ -120,16 +129,18 @@ const config = {
     pointer-events: none;
   }
 
-  /* A door plate: its bottom edge sits just above the door frame at any scale. */
+  /* A door plate: its bottom edge sits just above the door frame at any scale.
+     The script centres it over its door on whole pixels. */
   .sign {
     position: absolute;
     left: 0;
     top: calc(var(--scale) * 52px);
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.4rem;
     padding: 0.25rem 0.55rem;
-    translate: -50% -100%;
+    translate: 0 -100%;
     border: 2px solid #1d1a14;
     background: #f0e6c0;
     color: #1d1a14;
@@ -147,6 +158,27 @@ const config = {
   /* Dorothy's prompt hangs over her head rather than over a door. */
   .sign.talk {
     top: calc(var(--scale) * 66px);
+  }
+
+  /* Speech prompts bob three scene pixels, in hard steps like a sprite. */
+  @media (prefers-reduced-motion: no-preference) {
+    .sign.talk {
+      animation: talk-bob 1.6s steps(1, end) infinite;
+    }
+  }
+
+  @keyframes talk-bob {
+    0%,
+    100% {
+      translate: 0 -100%;
+    }
+    25%,
+    75% {
+      translate: 0 calc(-100% - var(--scale) * 2px);
+    }
+    50% {
+      translate: 0 calc(-100% - var(--scale) * 3px);
+    }
   }
 
   .sign .key {
@@ -182,22 +214,38 @@ const config = {
   }
 
   .pad button {
-    width: 3rem;
-    height: 3rem;
-    border: 2px solid #1d1a14;
+    display: grid;
+    place-items: center;
+    width: calc(var(--ppx) * 24px);
+    height: calc(var(--ppx) * 24px);
+    padding: 0;
+    border: calc(var(--ppx) * 1px) solid #1d1a14;
     background: #f0e6c0;
     color: #1d1a14;
-    box-shadow: 3px 3px 0 #05080c;
-    font-size: 1rem;
+    box-shadow: calc(var(--ppx) * 2px) calc(var(--ppx) * 2px) 0 #05080c;
     cursor: pointer;
     pointer-events: auto;
     touch-action: none;
     user-select: none;
   }
 
+  .pad svg {
+    width: calc(var(--ppx) * 5px);
+    height: calc(var(--ppx) * 9px);
+    fill: currentColor;
+    shape-rendering: crispEdges;
+  }
+
   .pad button:active {
-    translate: 2px 2px;
-    box-shadow: 1px 1px 0 #05080c;
+    translate: calc(var(--ppx) * 1px) calc(var(--ppx) * 1px);
+    box-shadow: calc(var(--ppx) * 1px) calc(var(--ppx) * 1px) 0 #05080c;
+  }
+
+  @media (max-width: 40rem) {
+    .sign {
+      font-size: 0.85rem;
+      padding: 0.15rem 0.45rem;
+    }
   }
 
   .caption {
@@ -211,12 +259,6 @@ const config = {
     color: var(--ink-2);
   }
 
-  @media (max-width: 40rem) {
-    .sign {
-      font-size: 0.85rem;
-      padding: 0.15rem 0.45rem;
-    }
-  }
 </style>
 
 <script>
@@ -261,41 +303,88 @@ const config = {
   const FOREGROUND_SPEED = 1.3;
   const STEP_EVERY = 0.5; // seconds, the game's footstep timer
 
-  // Sampled from the game's office and bedroom.
+  // Where each character's feet are in their frame, measured from the sheets:
+  // the offset of the feet from the frame's centre, and how wide they stand.
+  const FEET: Record<string, { off: number; w: number }> = {
+    astara: { off: 0, w: 30 },
+    dorothy: { off: -5, w: 68 },
+    sarah: { off: 1, w: 40 },
+    wei: { off: 1, w: 40 },
+    krishna: { off: 1, w: 27 },
+    jenny: { off: -9, w: 47 },
+  };
+  // A contact shadow, row by row from the top: how far in from each end the
+  // row starts. Solid in the middle, dithered at the rim.
+  const SHADOW_ROWS = [6, 2, 0, 0, 1, 3, 7];
+
+  // Sampled from the game's office and bedroom. Every colour is solid: soft
+  // light is made by checker dithering between two of them, never by alpha,
+  // so the scene stays a fixed palette of hard pixels.
   const DAY = {
     ceiling: '#030404',
+    ceilingEdge: '#0b1117',
     trim: '#17212c',
     wall: '#0f1a26',
+    wallHi: '#16232f',
+    wallLo: '#0a121b',
+    glow: '#1b2836',
     band: '#2f404e',
+    bandHi: '#3a4d5c',
+    bandLo: '#26343f',
+    rail: '#22303c',
     skirting: '#22303c',
+    skirtingHi: '#2f404e',
     floor: '#374b5d',
+    floorLo: '#2e3f4f',
+    floorHi: '#41576a',
+    spill: '#5b6a70',
     frame: '#767a80',
+    frameHi: '#9a9ea4',
+    frameLo: '#4f545b',
     jamb: '#373e48',
+    jambHi: '#454d58',
     room: '#554432',
+    roomDeep: '#3f3225',
     roomFloor: '#8a7a5c',
+    roomFloorLo: '#76684e',
     light: '#f4f4f4',
+    lightLo: '#c9ced3',
     lightFrame: '#343434',
-    glow: 'rgba(244, 244, 244, 0.07)',
-    spill: 'rgba(190, 180, 149, 0.16)',
     ceilingLamp: '#f4f4f4',
-    ceilingLampGlow: 'rgba(244, 244, 244, 0.12)',
+    lampGlow: '#1e2328',
+    shadow: '#1d2934',
+    lit: true,
   };
-  const DUSK = {
+  const DUSK: typeof DAY = {
     ...DAY,
     wall: '#0a121b',
+    wallHi: '#0f1923',
+    wallLo: '#060c12',
     band: '#1c2833',
+    bandHi: '#24323e',
+    bandLo: '#16202a',
+    rail: '#131c25',
     skirting: '#131c25',
+    skirtingHi: '#1c2833',
     floor: '#212e3a',
+    floorLo: '#1b2630',
+    floorHi: '#283745',
+    spill: '#6f6a58',
     frame: '#4a4f57',
+    frameHi: '#5e636b',
+    frameLo: '#33373d',
     jamb: '#232830',
+    jambHi: '#2c323b',
     room: '#8f7c58',
+    roomDeep: '#7a6a4b',
     roomFloor: '#beb495',
+    roomFloorLo: '#a89e80',
     light: '#1a232d',
+    lightLo: '#151c24',
     lightFrame: '#10161d',
-    glow: 'rgba(0, 0, 0, 0)',
-    spill: 'rgba(190, 180, 149, 0.34)',
     ceilingLamp: '#2a323b',
-    ceilingLampGlow: 'rgba(0, 0, 0, 0)',
+    shadow: '#0c131a',
+    lit: false,
   };
 
   const load = (src: string): HTMLImageElement => Object.assign(new Image(), { src });
@@ -308,6 +397,8 @@ const config = {
     const signs = [...root.querySelectorAll<HTMLElement>('[data-sign]')].map((el) => ({
       el,
       x: Number(el.dataset.x),
+      wIdle: 0,
+      wNear: 0,
     }));
 
     const idle = load(config.astara.idle.src);
@@ -319,6 +410,7 @@ const config = {
     const worldW = config.width;
 
     let scale = 2;
+    let ppx = 2;
     let viewW = 720;
     let x = 150;
     let facing = 1;
@@ -336,8 +428,24 @@ const config = {
       viewW = Math.ceil(width / scale);
       canvas.width = viewW;
       canvas.height = VIEW_H;
+      // Whole multiples only: the stage clips the last part-pixel column.
+      canvas.style.width = `${viewW * scale}px`;
       canvas.style.height = `${VIEW_H * scale}px`;
+      ppx = Math.max(scale, 2);
       stage.style.setProperty('--scale', String(scale));
+      stage.style.setProperty('--ppx', String(ppx));
+      // Plates are a whole number of pixels wide, so both edges stay sharp.
+      // The nearest plate grows to show its key, so measure both.
+      const snap = (px: number) => Math.ceil(px / ppx) * ppx;
+      signs.forEach((sign) => {
+        const wasNear = sign.el.hasAttribute('data-near');
+        sign.el.style.width = '';
+        sign.el.setAttribute('data-near', '');
+        sign.wNear = snap(sign.el.getBoundingClientRect().width);
+        sign.el.removeAttribute('data-near');
+        sign.wIdle = snap(sign.el.getBoundingClientRect().width);
+        sign.el.toggleAttribute('data-near', wasNear);
+      });
       ctx.imageSmoothingEnabled = false;
       draw();
     }
@@ -347,19 +455,79 @@ const config = {
       return Math.max(0, Math.min(worldW - viewW, x - viewW / 2));
     }
 
+    // A 2x2 checker for dithering. Its phase follows the camera so the
+    // pattern is fixed to the world and does not crawl while walking.
+    const checker = document.createElement('canvas');
+    checker.width = 2;
+    checker.height = 2;
+    const checkerCtx = checker.getContext('2d')!;
+    const patterns = new Map<string, CanvasPattern>();
+    function dither(colour: string, cam: number): CanvasPattern {
+      let pattern = patterns.get(colour);
+      if (!pattern) {
+        checkerCtx.clearRect(0, 0, 2, 2);
+        checkerCtx.fillStyle = colour;
+        checkerCtx.fillRect(0, 0, 1, 1);
+        checkerCtx.fillRect(1, 1, 1, 1);
+        pattern = ctx.createPattern(checker, 'repeat')!;
+        patterns.set(colour, pattern);
+      }
+      pattern.setTransform(new DOMMatrix().translate(-(cam % 2), 0));
+      return pattern;
+    }
+
+    function rect(colour: string | CanvasPattern, x: number, y: number, w: number, h: number): void {
+      ctx.fillStyle = colour;
+      ctx.fillRect(x, y, w, h);
+    }
+
+    /** A raised frame: light on the top and left edges, shade on the others. */
+    function bevel(x: number, y: number, w: number, h: number, base: string, hi: string, lo: string): void {
+      rect(base, x, y, w, h);
+      rect(hi, x, y, w, 1);
+      rect(hi, x, y, 1, h);
+      rect(lo, x, y + h - 1, w, 1);
+      rect(lo, x + w - 1, y, 1, h);
+    }
+
     function drawRoom(cam: number, c: typeof DAY): void {
-      ctx.fillStyle = c.ceiling;
-      ctx.fillRect(0, 0, viewW, CEILING);
-      ctx.fillStyle = c.wall;
-      ctx.fillRect(0, CEILING, viewW, BAND_Y - CEILING);
-      ctx.fillStyle = c.trim;
-      ctx.fillRect(0, CEILING, viewW, 4);
-      ctx.fillStyle = c.band;
-      ctx.fillRect(0, BAND_Y, viewW, FLOOR_Y - BAND_Y);
-      ctx.fillStyle = c.floor;
-      ctx.fillRect(0, FLOOR_Y, viewW, VIEW_H - FLOOR_Y);
-      ctx.fillStyle = c.skirting;
-      ctx.fillRect(0, FLOOR_Y - 3, viewW, 3);
+      // Ceiling, wall, wainscot and floor.
+      rect(c.ceiling, 0, 0, viewW, CEILING);
+      rect(c.ceilingEdge, 0, CEILING - 1, viewW, 1);
+      rect(c.wall, 0, CEILING, viewW, BAND_Y - CEILING);
+      rect(c.trim, 0, CEILING, viewW, 4);
+      rect(c.wallHi, 0, CEILING + 4, viewW, 1);
+      rect(c.band, 0, BAND_Y, viewW, FLOOR_Y - BAND_Y);
+      rect(c.floor, 0, FLOOR_Y, viewW, VIEW_H - FLOOR_Y);
+
+      // Wall panels every 64 px and wainscot boards every 16, in world space.
+      for (let wx = Math.floor(cam / 16) * 16; wx < cam + viewW; wx += 16) {
+        const px = wx - cam;
+        if (wx % 64 === 0) {
+          rect(c.wallLo, px, CEILING + 5, 1, BAND_Y - CEILING - 5);
+          rect(c.wallHi, px + 1, CEILING + 5, 1, BAND_Y - CEILING - 5);
+        }
+        rect(c.bandLo, px, BAND_Y + 3, 1, FLOOR_Y - BAND_Y - 7);
+        rect(c.bandHi, px + 1, BAND_Y + 3, 1, FLOOR_Y - BAND_Y - 7);
+      }
+
+      // Chair rail and skirting, each with a lit top edge.
+      rect(c.rail, 0, BAND_Y, viewW, 3);
+      rect(c.bandHi, 0, BAND_Y, viewW, 1);
+      rect(c.skirting, 0, FLOOR_Y - 4, viewW, 4);
+      rect(c.skirtingHi, 0, FLOOR_Y - 4, viewW, 1);
+
+      // Floor tiles in perspective: rows widen towards the viewer, and the
+      // seams fan out from the middle of the view, one pixel row at a time.
+      rect(c.floorHi, 0, FLOOR_Y, viewW, 1);
+      for (const row of [4, 10, 18, 29]) rect(c.floorLo, 0, FLOOR_Y + row, viewW, 1);
+      const centre = viewW / 2;
+      for (let wx = Math.floor((cam - 120) / 48) * 48; wx < cam + viewW + 120; wx += 48) {
+        const base = wx - cam;
+        for (let r = 1; r < VIEW_H - FLOOR_Y; r += 1) {
+          rect(c.floorLo, Math.round(base + ((base - centre) * r) / 90), FLOOR_Y + r, 1, 1);
+        }
+      }
 
       // Three light panels on the wall between each pair of doors, as in the office.
       const bays = [0, ...config.doors, worldW];
@@ -372,48 +540,47 @@ const config = {
         for (let n = 0; n < 3; n += 1) {
           const px = Math.round(from + n * (w + gap) - cam);
           if (px > viewW || px + w < 0) continue;
-          ctx.fillStyle = c.glow;
-          ctx.fillRect(px - 8, 36, w + 16, 44);
-          ctx.fillRect(px - 4, 40, w + 8, 36);
-          ctx.fillStyle = c.lightFrame;
-          ctx.fillRect(px, 44, w, 28);
-          ctx.fillStyle = c.light;
-          ctx.fillRect(px + 3, 47, w - 6, 22);
+          if (c.lit) rect(dither(c.glow, cam), px - 4, 40, w + 8, 36);
+          rect(c.lightFrame, px, 44, w, 28);
+          rect(c.light, px + 3, 47, w - 6, 22);
+          rect(dither(c.lightLo, cam), px + 3, 65, w - 6, 2);
+          rect(c.lightLo, px + 3, 67, w - 6, 2);
         }
         // One recessed ceiling lamp per bay, like the one above each room in the game.
         const lamp = Math.round((from + to) / 2 - cam);
-        ctx.fillStyle = c.ceilingLampGlow;
-        ctx.fillRect(lamp - 14, 13, 28, 6);
-        ctx.fillStyle = c.ceilingLamp;
-        ctx.fillRect(lamp - 10, 15, 20, 2);
-        ctx.fillRect(lamp - 7, 14, 14, 4);
+        if (c.lit) rect(dither(c.lampGlow, cam), lamp - 14, 12, 28, 8);
+        rect(c.ceilingLamp, lamp - 10, 15, 20, 2);
+        rect(c.ceilingLamp, lamp - 7, 14, 14, 4);
       }
 
-      // Doorways: frame, a jamb for depth, a warm room behind, light on the floor.
+      // Doorways: a bevelled frame, a jamb for depth, a warm room behind,
+      // a shadow under the lintel, and dithered light on the floor.
       for (const door of config.doors) {
         const left = Math.round(door - DOOR_W / 2 - cam);
         if (left > viewW + 40 || left + DOOR_W < -40) continue;
-        ctx.fillStyle = c.frame;
-        ctx.fillRect(left - 7, DOOR_TOP - 7, DOOR_W + 14, FLOOR_Y - DOOR_TOP + 7);
-        ctx.fillStyle = c.room;
-        ctx.fillRect(left, DOOR_TOP, DOOR_W, FLOOR_Y - DOOR_TOP);
-        ctx.fillStyle = c.roomFloor;
-        ctx.fillRect(left, FLOOR_Y - 22, DOOR_W, 22);
-        ctx.fillStyle = c.jamb;
-        ctx.fillRect(left, DOOR_TOP, 9, FLOOR_Y - DOOR_TOP);
-        // Light from the room fans out across the floor, one pixel row at a time.
-        ctx.fillStyle = c.spill;
+        bevel(left - 7, DOOR_TOP - 7, DOOR_W + 14, FLOOR_Y - DOOR_TOP + 7, c.frame, c.frameHi, c.frameLo);
+        rect(c.frameLo, left - 1, DOOR_TOP - 1, DOOR_W + 2, 1);
+        rect(c.room, left, DOOR_TOP, DOOR_W, FLOOR_Y - DOOR_TOP);
+        rect(c.roomDeep, left, DOOR_TOP, DOOR_W, 8);
+        rect(dither(c.roomDeep, cam), left, DOOR_TOP + 8, DOOR_W, 4);
+        rect(c.roomFloor, left, FLOOR_Y - 22, DOOR_W, 22);
+        rect(c.roomFloorLo, left, FLOOR_Y - 22, DOOR_W, 1);
+        rect(dither(c.roomFloorLo, cam), left, FLOOR_Y - 21, DOOR_W, 2);
+        rect(c.jamb, left, DOOR_TOP, 9, FLOOR_Y - DOOR_TOP);
+        rect(c.jambHi, left + 8, DOOR_TOP, 1, FLOOR_Y - DOOR_TOP);
+        // The light fans out one pixel row at a time: solid by the door,
+        // dithered as it thins out.
         for (let row = 0; row < VIEW_H - FLOOR_Y; row += 1) {
-          ctx.fillRect(left + 9 - row, FLOOR_Y + row, DOOR_W - 9 + row * 2, 1);
+          const fill = row < 6 ? c.spill : dither(c.spill, cam);
+          rect(fill, left + 9 - row, FLOOR_Y + row, DOOR_W - 9 + row * 2, 1);
         }
       }
 
-      // The Navaport district map, framed.
+      // The Navaport district map, in a bevelled frame.
       if (map.complete && map.naturalWidth) {
         const mx = Math.round(config.map.x - cam);
         if (mx < viewW && mx + config.map.w > 0) {
-          ctx.fillStyle = c.ceiling;
-          ctx.fillRect(mx - 3, 96, config.map.w + 6, config.map.h + 6);
+          bevel(mx - 4, 95, config.map.w + 8, config.map.h + 8, c.ceiling, c.wallHi, c.ceiling);
           ctx.drawImage(map, mx, 99);
         }
       }
@@ -450,11 +617,35 @@ const config = {
       }
     }
 
+    /** A flat pixel ellipse on the floor, centred under a character's feet. */
+    function shadow(c: typeof DAY, cam: number, centre: number, feet: number, w: number): void {
+      // Wider than the stance, and mostly below the soles so it shows.
+      w += 14;
+      const left = Math.round(centre - w / 2);
+      const top = feet - 3;
+      SHADOW_ROWS.forEach((inset, row) => {
+        const rimW = Math.max(0, w - inset * 2);
+        if (rimW <= 0) return;
+        // The rim is dithered; the inner part solid.
+        rect(dither(c.shadow, cam), left + inset - 3, top + row, rimW + 6, 1);
+        rect(c.shadow, left + inset, top + row, rimW, 1);
+      });
+    }
+
     function draw(): void {
       const cam = Math.round(camera());
       const dusk = theme() === 'dusk';
       const still = reducedMotion();
-      drawRoom(cam, dusk ? DUSK : DAY);
+      const palette = dusk ? DUSK : DAY;
+      drawRoom(cam, palette);
+
+      // Shadows belong to the floor, so the dusk dimming falls on them too.
+      for (const npc of npcs) {
+        const feet = FEET[npc.name.toLowerCase()] ?? { off: 0, w: 40 };
+        const flip = x < npc.x;
+        shadow(palette, cam, npc.x - cam + (flip ? -feet.off : feet.off), NPC_FEET, feet.w);
+      }
+      shadow(palette, cam, x - cam, FEET_Y, FEET.astara!.w);
 
       if (dusk) {
         // Lights off: dim the room and let the doorways glow. This is part of
@@ -493,16 +684,23 @@ const config = {
       near = null;
       let best = NEAR;
       for (const sign of signs) {
-        const sx = (sign.x - cam) * scale;
-        sign.el.style.transform = `translateX(${sx}px)`;
-        sign.el.style.visibility = sx > -140 && sx < viewW * scale + 140 ? 'visible' : 'hidden';
         const distance = Math.abs(sign.x - x);
         if (distance < best) {
           best = distance;
           near = sign;
         }
       }
-      for (const sign of signs) sign.el.toggleAttribute('data-near', sign === near);
+      for (const sign of signs) {
+        const isNear = sign === near;
+        const w = isNear ? sign.wNear : sign.wIdle;
+        const sx = (sign.x - cam) * scale;
+        // Centred, then snapped to the plate's own pixel grid.
+        const left = Math.round((sx - w / 2) / ppx) * ppx;
+        sign.el.toggleAttribute('data-near', isNear);
+        if (w) sign.el.style.width = `${w}px`;
+        sign.el.style.transform = `translateX(${left}px)`;
+        sign.el.style.visibility = sx > -140 && sx < viewW * scale + 140 ? 'visible' : 'hidden';
+      }
     }
 
     function step(now: number): void {
@@ -596,6 +794,8 @@ const config = {
 
     new IntersectionObserver(([entry]) => (visible = entry?.isIntersecting ?? true)).observe(stage);
     new ResizeObserver(resize).observe(stage);
+    // Plate widths depend on the pixel font; measure again once it has loaded.
+    void document.fonts.ready.then(resize);
     document.addEventListener('pf:theme', draw);
     [idle, walk, map, fan, ...npcs.map((n) => n.img), ...foreground.map((f) => f.img)].forEach((img) =>
       img.addEventListener('load', draw),

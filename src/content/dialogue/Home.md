@@ -12,7 +12,7 @@ flags:
 | Portrait                 | Dialogue             | Tags    |
 | ------------------------ | -------------------- | ------- |
 | ![[dorothy_neutral.png]] | What's up? Where to? | #left   |
-|                          | The game you're from. → #Go \|go=/work/truths-astray\| <br>Everything Anders has made. → #Go \|go=/archive\| <br>How do I search? → #Search <br>Show all three disciplines. → #Reset \|filter=all\| <br>Stop popping up. → #Mute {guide-muted} <br>Nothing much. → #Bye | #choice |
+|                          | The game you're from. → #Go \|go=/work/truths-astray\| <br>Everything Anders has made. → #Go \|go=/archive\| <br>How do I search? → #Search <br>Show all three disciplines. → #Reset \|filter=all\| <br>Tell me a secret. → #Secret <br>Stop popping up. → #Mute {guide-muted} <br>Nothing much. → #Bye | #choice |
 
 # Go
 
@@ -45,3 +45,10 @@ flags:
 | Portrait               | Dialogue        | Tags  |
 | ---------------------- | --------------- | ----- |
 | ![[dorothy_happy.png]] | I'll be around~ | #left |
+
+# Secret
+
+| Portrait                 | Dialogue                                                                                         | Tags          |
+| ------------------------ | ------------------------------------------------------------------------------------------------ | ------------- |
+| ![[dorothy_neutral.png]] | Psst…                                                                                            | #left         |
+| ![[dorothy_happy.png]]   | Everyone in the hallway talks. Even the Health Inspector. *Especially* the Health Inspector. <br>Switch every mask off. I've got a line for that. <br>Type **help** in search. It knows more than it lets on. <br>The sprites out there walk at the same speed as in the game. Anders counted the frames. <br>The doors in the hallway are real links. Walk up to one and press **E**. | #left #random |
