@@ -215,9 +215,12 @@ const count = (d: string) => all.filter((p) => (p.data.disciplines as string[]).
   }
 
   /* Three overlapping discs after the name: the three disciplines. */
+  /* Every disc overlaps the one before it; the padding takes up the first
+     disc's overlap, so a hidden disc can collapse to nothing. */
   .hero-mark {
     display: inline-flex;
     margin-left: 0.08em;
+    padding-left: 0.11em;
     isolation: isolate;
     vertical-align: 0.02em;
   }
@@ -231,7 +234,7 @@ const count = (d: string) => all.filter((p) => (p.data.disciplines as string[]).
     animation: settle 0.9s cubic-bezier(0.2, 0.9, 0.2, 1) both;
   }
 
-  .hero-mark b + b {
+  .hero-mark b {
     margin-left: -0.11em;
   }
 
@@ -241,6 +244,25 @@ const count = (d: string) => all.filter((p) => (p.data.disciplines as string[]).
 
   .hero-mark b:nth-child(3) {
     animation-delay: 0.16s;
+  }
+
+  /* A disc leaves the mark while its discipline's mask is off, and the ones
+     left close up. Waits for the script to set data-masks. */
+  :global(html[data-masks]:not([data-masks~='games'])) .hero-mark b[data-d='games'],
+  :global(html[data-masks]:not([data-masks~='software'])) .hero-mark b[data-d='software'],
+  :global(html[data-masks]:not([data-masks~='ai'])) .hero-mark b[data-d='ai'] {
+    width: 0;
+    margin-left: 0;
+    scale: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-mark b {
+      transition:
+        width 0.35s cubic-bezier(0.2, 0.9, 0.2, 1),
+        margin 0.35s cubic-bezier(0.2, 0.9, 0.2, 1),
+        scale 0.35s cubic-bezier(0.2, 0.9, 0.2, 1);
+    }
   }
 
   @keyframes settle {

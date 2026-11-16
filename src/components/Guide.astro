@@ -28,7 +28,9 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
   <button type="button" class="guide-launch" data-guide-launch aria-expanded="false">
     <canvas class="guide-face" width="80" height="80" aria-hidden="true"></canvas>
     <span class="guide-word">Talk</span>
-    <span class="guide-alert" data-guide-alert aria-hidden="true" hidden>!</span>
+    <span class="guide-alert" data-guide-alert aria-hidden="true" hidden>
+      <svg viewBox="0 0 2 7"><path d="M0 0h2v4h-2zM0 5h2v2h-2z" /></svg>
+    </span>
   </button>
 </div>
 <script type="application/json" id="pf-dialogues" set:html={json} />
@@ -36,7 +38,7 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
 <style>
   .guide {
     position: fixed;
-    right: clamp(0.5rem, 2vw, 1.25rem);
+    right: clamp(0.85rem, 2vw, 1.25rem);
     bottom: clamp(0.5rem, 2vw, 1.25rem);
     z-index: 50;
     display: grid;
@@ -106,20 +108,28 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
     background: #cfc59c;
   }
 
+  /* A pixel "!" on the plate's top-right corner, clear of Dorothy's face.
+     Fixed Games Red Ink with Dialogue Cream reads the same in day and dusk. */
   .guide-alert {
     position: absolute;
-    top: -0.9rem;
-    left: 0.7rem;
+    top: -12px;
+    right: -9px;
     display: grid;
     place-items: center;
-    width: 1.3rem;
-    height: 1.3rem;
-    /* Fixed Games Red Ink: white stays readable in day and dusk alike. */
+    width: 22px;
+    height: 22px;
     background: #b72a12;
-    color: #fff;
-    font-weight: 600;
+    color: #f0e6c0;
     border: 2px solid #1d1a14;
+    box-shadow: 2px 2px 0 #1d1a14;
     animation: bob 0.9s steps(2) infinite;
+  }
+
+  .guide-alert svg {
+    width: 4px;
+    height: 14px;
+    fill: currentColor;
+    shape-rendering: crispEdges;
   }
 
   .guide-alert[hidden] {
