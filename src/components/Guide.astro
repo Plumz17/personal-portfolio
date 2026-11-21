@@ -240,9 +240,15 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
       alert.hidden = !next || (flags.has('opened-guide') && !flags.has('masks-off'));
     }
 
+    /** Where focus was before the conversation, to hand it back afterwards:
+     *  the hallway, so E talks again, or the launcher. */
+    let returnTo: HTMLElement | null = null;
+
     function open(chosen?: Dialogue): void {
       const dialogue = chosen ?? pick();
       if (!dialogue) return;
+      const from = document.activeElement as HTMLElement | null;
+      if (panel.hidden && from && from !== document.body && !panel.contains(from)) returnTo = from;
       runner.stop();
       pending.length = 0;
       panel.hidden = false;
@@ -264,13 +270,27 @@ const json = JSON.stringify(dialogues).replace(/</g, '\\u003c');
       duck(false);
       launch.setAttribute('aria-expanded', 'false');
       refresh();
-      if (!launch.hidden) launch.focus({ preventScroll: true });
+      const back = returnTo?.isConnected && !returnTo.closest('[hidden]') ? returnTo : launch.hidden ? null : launch;
+      returnTo = null;
+      back?.focus({ preventScroll: true });
     }
 
     launch.addEventListener('click', () => (panel.hidden ? open() : close()));
     root.querySelector('[data-guide-close]')?.addEventListener('click', close);
     panel.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') close();
+      if (event.key === 'Escape') {
+        close();
+        return;
+      }
+      // E talks, as in the game: it finishes the line or moves on. Replies are
+      // still picked on purpose, with Enter or a click, never by a stray E.
+      if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
+      const onButton = (event.target as HTMLElement).closest('button');
+      const isE = event.key.toLowerCase() === 'e';
+      if ((isE && !view.choosing) || (!onButton && (event.key === 'Enter' || event.key === ' '))) {
+        event.preventDefault();
+        view.submit();
+      }
     });
     document.addEventListener('pf:masks', () => {
       if (panel.hidden) refresh();

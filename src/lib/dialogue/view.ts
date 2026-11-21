@@ -52,7 +52,7 @@ export class DialogueView {
     private readonly opts: ViewOptions,
   ) {
     container.innerHTML = `
-      <div class="dlg" data-side="left">
+      <div class="dlg" data-side="left" tabindex="-1">
         <canvas class="dlg-portrait" width="170" height="170" aria-hidden="true"></canvas>
         <div class="dlg-body">
           <div class="dlg-name"></div>
@@ -82,10 +82,15 @@ export class DialogueView {
   }
 
   showLine(line: DialogueLine): void {
+    const had = this.hasFocus();
     this.setSpeaker(line);
     this.choicesEl.replaceChildren();
+    this.nextBtn.hidden = true;
+    if (had) this.focus();
     this.type(line.html, () => {
+      const holding = this.hasFocus();
       this.nextBtn.hidden = false;
+      if (holding) this.focus();
     });
   }
 
@@ -98,6 +103,7 @@ export class DialogueView {
       this.textEl.replaceChildren();
     }
     this.liveEl.textContent = `${this.textEl.textContent ?? ''} Choose a reply.`.trim();
+    const had = this.hasFocus();
     this.nextBtn.hidden = true;
     this.choicesEl.replaceChildren(
       ...options.map((option) => {
@@ -108,11 +114,23 @@ export class DialogueView {
         return button;
       }),
     );
+    if (had) this.focus();
   }
 
+  /** The first reply, the next button, or while a line is still typing (no
+   *  button yet) the box itself, so key presses stay in the conversation. */
   focus(): void {
-    const target = this.choicesEl.querySelector('button') ?? this.nextBtn;
-    (target as HTMLElement).focus({ preventScroll: true });
+    const target = this.choicesEl.querySelector('button') ?? (this.nextBtn.hidden ? this.root : this.nextBtn);
+    target.focus({ preventScroll: true });
+  }
+
+  /** Whether a choice is on screen: then E and Enter on the box do nothing. */
+  get choosing(): boolean {
+    return this.choicesEl.childElementCount > 0;
+  }
+
+  private hasFocus(): boolean {
+    return this.root.contains(document.activeElement);
   }
 
   clear(): void {

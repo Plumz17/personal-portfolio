@@ -262,7 +262,7 @@ const config = {
 </style>
 
 <script>
-  import { reducedMotion, theme } from '../lib/state';
+  import { hallSpot, reducedMotion, saveHallSpot, theme } from '../lib/state';
   import { footstep } from '../lib/sound';
 
   interface Sheet {
@@ -412,8 +412,12 @@ const config = {
     let scale = 2;
     let ppx = 2;
     let viewW = 720;
-    let x = 150;
-    let facing = 1;
+    // Back where the visitor left Astara, if they have walked here before.
+    const spot = hallSpot();
+    let x = spot ? Math.max(40, Math.min(worldW - 40, spot.x)) : 150;
+    let facing: number = spot?.facing ?? 1;
+    let walking = false;
+    const remember = () => saveHallSpot({ x, facing: facing < 0 ? -1 : 1 });
     let held = 0; // -1, 0, 1 from keys or buttons
     let target: number | null = null; // tap-to-walk destination
     let clock = 0;
@@ -725,12 +729,17 @@ const config = {
         } else {
           stepIn = 0;
         }
+        // Remember the spot each time Astara stops, not on every frame.
+        if (walking && dir === 0) remember();
+        walking = dir !== 0;
         draw();
       }
       requestAnimationFrame(step);
     }
 
     function activate(): void {
+      // Never restart a conversation that is already open.
+      if (document.querySelector('[data-guide-panel]:not([hidden])')) return;
       near?.el.click();
     }
 
@@ -791,6 +800,9 @@ const config = {
       target = camera() + (event.clientX - rect.left) / scale;
       stage.focus({ preventScroll: true });
     });
+
+    // Leaving mid-stride (through a door, say) still saves where Astara was.
+    window.addEventListener('pagehide', remember);
 
     new IntersectionObserver(([entry]) => (visible = entry?.isIntersecting ?? true)).observe(stage);
     new ResizeObserver(resize).observe(stage);

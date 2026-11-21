@@ -12,6 +12,13 @@ interface Saved {
   done: string[];
   off: Discipline[];
   theme?: 'day' | 'dusk';
+  /** Where Astara stood in the hallway, and which way they faced. */
+  hall?: HallSpot;
+}
+
+export interface HallSpot {
+  x: number;
+  facing: 1 | -1;
 }
 
 function load(): Saved {
@@ -70,6 +77,21 @@ export const flags: FlagStore & { setTransient(flag: string, on?: boolean): void
 export function resetMemory(): void {
   saved.flags = [];
   saved.done = [];
+  delete saved.hall;
+  save();
+}
+
+// --- Hallway ------------------------------------------------------------------
+
+export function hallSpot(): HallSpot | null {
+  const spot = saved.hall;
+  return spot && Number.isFinite(spot.x) ? spot : null;
+}
+
+export function saveHallSpot(spot: HallSpot): void {
+  const x = Math.round(spot.x);
+  if (saved.hall?.x === x && saved.hall.facing === spot.facing) return;
+  saved.hall = { x, facing: spot.facing };
   save();
 }
 

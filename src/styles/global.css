@@ -401,6 +401,12 @@ p {
   line-height: 1.35;
 }
 
+/* The box only holds focus for a moment while a line types; the next button
+   or a reply takes it as soon as there is one. */
+.dlg:focus {
+  outline: none;
+}
+
 .dlg[data-side='right'] {
   grid-template-columns: 1fr auto;
 }
