@@ -111,6 +111,20 @@ export class DialogueView {
         button.type = 'button';
         button.innerHTML = option.html;
         button.addEventListener('click', () => this.opts.onChoose(option));
+        // One cursor, as in a game menu: pointing at a reply selects it, so
+        // the mouse and the keyboard never highlight two at once.
+        button.addEventListener('pointermove', (event) => {
+          if (event.pointerType === 'mouse' && document.activeElement !== button) {
+            button.focus({ preventScroll: true });
+          }
+        });
+        button.addEventListener('keydown', (event) => {
+          const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+          if (!step) return;
+          event.preventDefault();
+          const all = [...this.choicesEl.querySelectorAll('button')];
+          all[(all.indexOf(button) + step + all.length) % all.length]?.focus({ preventScroll: true });
+        });
         return button;
       }),
     );

@@ -493,6 +493,13 @@ p {
   color: #f0e6c0;
 }
 
+/* Only the selected reply is filled: when the keys have moved the selection
+   away from the one under the mouse, that one goes back to plain. */
+.dlg-choices:has(button:focus-visible) button:hover:not(:focus-visible) {
+  background: #fff8dc;
+  color: #1d1a14;
+}
+
 .dlg-choices button::before {
   content: '▸ ';
 }

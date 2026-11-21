@@ -89,8 +89,8 @@ const config = {
     </div>
   </div>
   <p class="caption wrap">
-    <span class="label">Astara and the newsroom, from Truths Astray</span>
-    <span>Arrow keys, the buttons, or tap where you want them to go. The doors are links, and everyone in the hall will talk.</span>
+    <span class="caption-title">Astara and the newsroom, from <i>Truths Astray</i></span>
+    <span class="caption-how">Arrow keys, the buttons, or tap where you want them to go. The doors are links, and everyone in the hall will talk.</span>
   </p>
 </section>
 
@@ -248,15 +248,26 @@ const config = {
     }
   }
 
+  /* A caption under the scene, on the page column like the site's other
+     captions: what it is, then how to play. */
   .caption {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1rem;
-    align-items: baseline;
-    margin-top: 0.6rem;
+    display: grid;
+    gap: 0.15rem;
+    margin-top: 0.85rem;
     max-width: none;
     font-size: 0.9rem;
+    line-height: 1.45;
     color: var(--ink-2);
+  }
+
+  .caption-title {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .caption-how {
+    max-width: 90ch;
+    text-wrap: pretty;
   }
 
 </style>
