@@ -1,19 +1,34 @@
-// Sound from Truths Astray: the looping music track, each character's voice
-// blip and Astara's footsteps. Off by default. Browsers only allow audio after
+// Music from Phase Reveal, voices and footsteps from Truths Astray. Off by
+// default. Browsers only allow audio after
 // a click or key press, so nothing plays until the visitor turns it on (or,
 // if they turned it on last visit, until their first interaction).
 
-import { basePath } from './state';
+import { activeMasks, basePath } from './state';
+import type { Discipline } from './site';
 
 const KEY = 'pf.sound';
 const MUSIC_VOLUME = 0.45;
 const DUCKED = 0.32; // the game drops the music by 10 dB while someone talks
 const STEPS = 5;
 
+// Phase Reveal's music works like its masks: a base loop always plays, and a
+// red, green and blue layer play in lockstep with it, each at -20 dB until its
+// mask is on, then up to full over a quarter of a second. The site's masks are
+// the same three colours: Games red, Software green, AI / ML blue.
+const LAYERS: Record<Discipline, string> = { games: 'red', software: 'green', ai: 'blue' };
+const LAYER_ON = 1; // 0 dB
+const LAYER_OFF = 0.1; // -20 dB
+const LAYER_FADE = 0.25; // seconds
+// Browsers without Ogg Vorbis decoding (older Safari) get the single
+// Truths Astray track instead.
+const FALLBACK = 'truths-astray/audio/weed_astray.mp3';
+
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let musicGain: GainNode | null = null;
-let musicSource: AudioBufferSourceNode | null = null;
+let musicSources: AudioBufferSourceNode[] = [];
+const layerGains = new Map<Discipline, GainNode>();
+let starting = false;
 let voiceSource: AudioBufferSourceNode | null = null;
 let ducked = false;
 let on = readSaved();
@@ -35,7 +50,8 @@ function writeSaved(): void {
   }
 }
 
-const src = (name: string): string => `${basePath()}/media/truths-astray/audio/${name}.mp3`;
+const src = (name: string): string =>
+  `${basePath()}/media/${name.includes('/') ? name : `truths-astray/audio/${name}.mp3`}`;
 
 function buffer(name: string): Promise<AudioBuffer | null> {
   let pending = buffers.get(name);
@@ -62,16 +78,50 @@ function ensureContext(): boolean {
   return true;
 }
 
+const layerLevel = (d: Discipline): number => (activeMasks().includes(d) ? LAYER_ON : LAYER_OFF);
+
 async function startMusic(): Promise<void> {
-  if (!ctx || !musicGain || musicSource) return;
-  const track = await buffer('weed_astray');
-  if (!track || !on || musicSource) return;
-  musicSource = ctx.createBufferSource();
-  musicSource.buffer = track;
-  musicSource.loop = true;
-  musicSource.connect(musicGain);
-  musicSource.start();
+  if (!ctx || !musicGain || musicSources.length || starting) return;
+  starting = true;
+  const names = ['loop', ...Object.values(LAYERS)].map((n) => `phase-reveal/audio/${n}.ogg`);
+  let tracks = await Promise.all(names.map(buffer));
+  if (tracks.some((t) => !t)) tracks = [await buffer(FALLBACK)];
+  starting = false;
+  if (!tracks[0] || !on || musicSources.length) return;
+
+  // One start time for every layer, so they loop together sample for sample.
+  const at = ctx.currentTime + 0.05;
+  const keys = Object.keys(LAYERS) as Discipline[];
+  musicSources = tracks.map((track, i) => {
+    const source = ctx!.createBufferSource();
+    source.buffer = track;
+    source.loop = true;
+    if (i === 0) {
+      source.connect(musicGain!);
+    } else {
+      const d = keys[i - 1]!;
+      const gain = ctx!.createGain();
+      gain.gain.value = layerLevel(d);
+      gain.connect(musicGain!);
+      source.connect(gain);
+      layerGains.set(d, gain);
+    }
+    source.start(at);
+    return source;
+  });
   fadeMusic(1.2);
+}
+
+/** Bring each layer up or down to match its mask, as the game's tween does. */
+function fadeLayers(): void {
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  layerGains.forEach((gain, d) => {
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(gain.gain.value, now);
+    // The game tweens in decibels, which is an exponential ramp in gain.
+    gain.gain.exponentialRampToValueAtTime(layerLevel(d), now + LAYER_FADE);
+  });
 }
 
 function fadeMusic(seconds: number): void {
@@ -84,11 +134,13 @@ function fadeMusic(seconds: number): void {
 }
 
 function stopMusic(): void {
-  if (!ctx || !musicSource) return;
-  const source = musicSource;
-  musicSource = null;
+  if (!ctx || !musicSources.length) return;
+  const sources = musicSources;
+  musicSources = [];
+  layerGains.clear();
   fadeMusic(0.4);
-  source.stop(ctx.currentTime + 0.45);
+  const at = ctx.currentTime + 0.45;
+  sources.forEach((source) => source.stop(at));
 }
 
 export const soundOn = (): boolean => on;
@@ -165,6 +217,8 @@ if (on) {
   window.addEventListener('pointerdown', resume);
   window.addEventListener('keydown', resume);
 }
+
+document.addEventListener('pf:masks', fadeLayers);
 
 // Go quiet in a background tab.
 document.addEventListener('visibilitychange', () => {
