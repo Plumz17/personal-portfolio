@@ -102,19 +102,52 @@ const { filters = false } = Astro.props;
   }
 
   /* Three overlapping discs, the site's mark. */
+  /* Every disc overlaps the one before by the same amount; the padding gives
+     back the first disc's share, so the mark closes up evenly whichever discs
+     are left. */
   .brand-mark {
     display: inline-flex;
     isolation: isolate;
+    padding-left: 0.3rem;
   }
   .brand-mark i {
     width: 0.8rem;
     height: 0.8rem;
+    margin-left: -0.3rem;
     border-radius: 50%;
     background: var(--d);
     mix-blend-mode: var(--blend);
   }
-  .brand-mark i + i {
-    margin-left: -0.3rem;
+
+  /* Like the masks and the music: a disc leaves while its mask is off. */
+  :global(html[data-masks]:not([data-masks~='games'])) .brand-mark i[data-d='games'],
+  :global(html[data-masks]:not([data-masks~='software'])) .brand-mark i[data-d='software'],
+  :global(html[data-masks]:not([data-masks~='ai'])) .brand-mark i[data-d='ai'] {
+    width: 0;
+    margin-left: 0;
+    scale: 0;
+  }
+  /* With every mask off the mark is empty, so the name takes its place. */
+  :global(html[data-masks='']) .brand {
+    gap: 0;
+  }
+  :global(html[data-masks='']) .brand-mark {
+    padding-left: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .brand {
+      transition: gap 0.35s cubic-bezier(0.2, 0.9, 0.2, 1);
+    }
+    .brand-mark {
+      transition: padding 0.35s cubic-bezier(0.2, 0.9, 0.2, 1);
+    }
+    .brand-mark i {
+      transition:
+        width 0.35s cubic-bezier(0.2, 0.9, 0.2, 1),
+        margin 0.35s cubic-bezier(0.2, 0.9, 0.2, 1),
+        scale 0.35s cubic-bezier(0.2, 0.9, 0.2, 1);
+    }
   }
 
   /* With filters, three columns: brand, masks centred on the page, the rest.
